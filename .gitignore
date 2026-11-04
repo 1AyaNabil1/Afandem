@@ -1,0 +1,8 @@
+.env
+cache/*.sqlite
+runs/
+drafts/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
