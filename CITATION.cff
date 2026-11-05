@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use Afandem, please cite it using the metadata below."
+type: software
+title: "Afandem: a benchmark for tool-using LLM agents in Egyptian Arabic, Arabizi and code-switched Arabic"
+abstract: >-
+  Afandem is an open benchmark for tool-using LLM agents in Arabic. It writes the
+  same request in English, Modern Standard Arabic, Egyptian Arabic, Arabizi and
+  code-switched Egyptian-English, runs it in deterministic tool sandboxes, and scores
+  the end state, the tool calls, their arguments and the refusals, so that a
+  difference in what the agent does can be attributed to the language variety.
+authors:
+  - family-names: Nabil
+    given-names: Aya
+    affiliation: Independent Researcher
+    orcid: "https://orcid.org/0009-0006-4938-561X"
+repository-code: "https://github.com/1AyaNabil1/Afandem"
+license: MIT
+doi: 10.5281/zenodo.23986571
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23986571
+    description: "All versions (concept DOI)."
+  - type: doi
+    value: 10.5281/zenodo.23986572
+    description: "Pre-registration v1 (tag prereg-v1)."
+keywords:
+  - LLM agents
+  - tool use
+  - function calling
+  - LLM evaluation
+  - benchmark
+  - Arabic NLP
+  - Egyptian Arabic
+  - Arabizi
+  - code-switching

@@ -5,6 +5,7 @@
 [![Python 3.13 | 3.14](https://img.shields.io/badge/python-3.13%20%7C%203.14-3776ab.svg)](pyproject.toml)
 [![Code licence: MIT](https://img.shields.io/badge/code%20licence-MIT-blue.svg)](LICENSE)
 [![Data licence: CC BY 4.0](https://img.shields.io/badge/data%20licence-CC%20BY%204.0-lightgrey.svg)](data/LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23986571.svg)](https://doi.org/10.5281/zenodo.23986571)
 
 **Does an LLM agent still do the right thing when you talk to it the way Egyptians actually type?**
 
@@ -34,7 +35,7 @@ The name is what an Egyptian service agent says to take your request — and wha
 - **The first pilot scenarios are assistant drafts awaiting the author's review.** Their provenance says so, `afandem data lint` reports them as errors, and none enters the measured set until the author rewrites or approves it.
 - **No results yet.**
 
-The design is in [`docs/plan.md`](docs/plan.md), with the [dataset](docs/dataset-spec.md), [harness](docs/harness-spec.md) and [methodology](docs/methodology.md) specifications. The hypotheses, analysis and sample-size rule are fixed in advance in [`docs/preregistration.md`](docs/preregistration.md) (tag `prereg-v1`). To contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+The design is in [`docs/plan.md`](docs/plan.md), with the [dataset](docs/dataset-spec.md), [harness](docs/harness-spec.md) and [methodology](docs/methodology.md) specifications. The hypotheses, analysis and sample-size rule are fixed in advance in [`docs/preregistration.md`](docs/preregistration.md) (tag `prereg-v1`, archived on Zenodo as [doi:10.5281/zenodo.23986572](https://doi.org/10.5281/zenodo.23986572)). To contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ```bash
 uv sync
@@ -49,6 +50,10 @@ uv run pytest
 
 Code: MIT (see `LICENSE`). Human-authored data: CC BY 4.0 (see `data/LICENSE`). Model outputs (traces, cached responses) will be published separately under a model-output notice.
 
+## Citing
+
+Use [`CITATION.cff`](CITATION.cff) (GitHub's "Cite this repository" button reads it). The concept DOI [10.5281/zenodo.23986571](https://doi.org/10.5281/zenodo.23986571) covers all versions; each release has its own DOI on Zenodo.
+
 ## Author
 
-Aya Nabil — [GitHub](https://github.com/1AyaNabil1) · [Hugging Face](https://huggingface.co/AyaNabil111)
+Aya Nabil — [GitHub](https://github.com/1AyaNabil1) · [Hugging Face](https://huggingface.co/AyaNabil111) · [ORCID](https://orcid.org/0009-0006-4938-561X)
