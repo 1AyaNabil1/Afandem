@@ -97,7 +97,7 @@ def test_free_route_parameters(routes: dict[str, RouteConfig]) -> None:
     assert routes["cloudflare_qwen"].params["reasoning_effort"] in ("low", "none")
     assert routes["ollama_local"].params["reasoning_effort"] == "low"
     assert routes["ollama_local"].key_env is None
-    assert routes["groq_qwen"].tpm == 8000
+    assert routes["groq_qwen"].tpm == 7000  # ITPM, live 429 on 5 Nov 2026
 
 
 def test_fanar_whitelist_and_context(routes: dict[str, RouteConfig]) -> None:
