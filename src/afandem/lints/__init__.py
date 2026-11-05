@@ -28,6 +28,7 @@ from afandem.lints.runner import (
     lint_scenario,
 )
 from afandem.lints.slots import check_slot_dates, check_slots
+from afandem.lints.solvability import check_solvability
 from afandem.lints.structure import (
     check_canary,
     check_length_ratio,
@@ -62,6 +63,7 @@ __all__ = [
     "check_provenance",
     "check_slot_dates",
     "check_slots",
+    "check_solvability",
     "check_tool_set",
     "lint_document",
     "lint_path",

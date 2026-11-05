@@ -22,6 +22,7 @@ from afandem.lints.findings import Finding
 from afandem.lints.followup import check_follow_up_lexicon
 from afandem.lints.harmful import check_harmful_text
 from afandem.lints.slots import check_slot_dates, check_slots
+from afandem.lints.solvability import check_solvability
 from afandem.lints.state import check_state
 from afandem.lints.structure import (
     check_canary,
@@ -63,6 +64,7 @@ SCENARIO_RULES: Mapping[str, ScenarioRule] = {
     "noise_subset": check_noise_subset,
     "tool_set": check_tool_set,
     "state": check_state,
+    "solvability": check_solvability,
 }
 """Per-scenario rules in report order; `canary` (which takes the project GUID) runs after."""
 
