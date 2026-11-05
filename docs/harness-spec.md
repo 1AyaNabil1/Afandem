@@ -80,15 +80,22 @@ Not in the tree: `pages.yml` (the leaderboard is a Hugging Face Space, §11), `p
 ```python
 TOOLS: dict[str, ToolSpec] = {}
 
+
 def tool[S: BaseModel, A: BaseModel](*, mutates: bool) -> CallableToolFn[S, A, ToolFn[S, A]]:
     def register(fn: ToolFn[S, A]) -> ToolFn[S, A]:
         args_model = get_type_hints(fn)["args"]
         TOOLS[fn.__name__] = ToolSpec(
-            name=fn.__name__, description=inspect.getdoc(fn) or "",
+            name=fn.__name__,
+            description=inspect.getdoc(fn) or "",
             schema=canonical_schema(args_model.model_json_schema()),
-            args_model=args_model, fn=fn, mutates=mutates)
+            args_model=args_model,
+            fn=fn,
+            mutates=mutates,
+        )
         return fn
+
     return register
+
 
 @tool(mutates=True)
 def book_appointment(state: ClinicState, args: BookArgs) -> dict[str, Any]:
@@ -109,24 +116,29 @@ One English system prompt, identical across columns and models; no few-shot. **P
 ```python
 async def run_episode(ctx: Episode) -> None:
     turn = await run_turn(ctx, ctx.column.text)
-    deliver = (turn.finish_reason == "stop"
-               and ctx.scenario.behaviour in ("act", "ask")
-               and not ctx.sandbox.attempted_write_happened)    # "validated write" = attempted_write
+    deliver = (
+        turn.finish_reason == "stop"
+        and ctx.scenario.behaviour in ("act", "ask")
+        and not ctx.sandbox.attempted_write_happened
+    )  # "validated write" = attempted_write
     ctx.trace.follow_up_rule, ctx.trace.follow_up_delivered = "v1", deliver
     if deliver:
         text = ctx.column.confirm_yes if ctx.scenario.behaviour == "act" else ctx.column.follow_up
         await run_turn(ctx, text)
 
+
 async def run_turn(ctx: Episode, user_text: str) -> Turn:
     ctx.messages.append(UserMsg(user_text))
     invalid: Counter[str] = Counter()
-    for _ in range(MAX_ROUNDS):                                   # 6
+    for _ in range(MAX_ROUNDS):  # 6
         resp = await ctx.provider.complete(ctx.messages, ctx.tools, ctx.params_sent)
-        ctx.messages.append(resp.assistant)                       # raw_extra kept, echoed back next call
+        ctx.messages.append(resp.assistant)  # raw_extra kept, echoed back next call
         if not resp.assistant.tool_calls or resp.finish_reason == "length":
             return Turn(resp.finish_reason, resp.assistant.text)
-        for call in resp.assistant.tool_calls:                    # in order; all results before the next request
-            result = ctx.sandbox.execute(call)                    # validates args; records call_valid, attempted_write, mutated
+        for call in resp.assistant.tool_calls:  # in order; all results before the next request
+            result = ctx.sandbox.execute(
+                call
+            )  # validates args; records call_valid, attempted_write, mutated
             ctx.messages.append(ToolMsg(call.id, call.name, dumps(result, ensure_ascii=False)))
             if result.get("error") == "invalid_arguments":
                 invalid[call.name] += 1
@@ -144,12 +156,23 @@ One internal message model: `SystemMsg`, `UserMsg`, `AssistantMsg(text, tool_cal
 **OpenRouter** (every grid model except possibly Gemini, plus the judge): `AsyncOpenAI(base_url="https://openrouter.ai/api/v1", max_retries=0, timeout=60)`; retries are ours and logged. `tools` **on every request including follow-ups**; results as `role: "tool"` with `tool_call_id`. `extra_body.provider = {order: [slug], allow_fallbacks: false, require_parameters: true, quantizations: […], data_collection: "deny"}` plus the account training opt-out; pins Claude `anthropic`, GPT `openai`, Qwen `deepinfra` `bf16` (23 Qwen endpoints exist from fp4 to bf16), chosen from the model page's Performance tab, with the date noted in `docs/providers.md`; endpoints snapshotted. 503 "no provider meets routing requirements" → `provider_error`, retried later. `reasoning_details` echoed back unconditionally (Sonnet multi-step calls fail without it). **Errors inside HTTP 200**: a body `error` or empty `choices` → `provider_error`, retried only on an embedded 429/5xx, never cached. **403 moderation → `blocked_by_provider`**, never retried (every Anthropic and OpenAI endpoint is moderated, and moderation is weaker on Arabic and Arabizi, so the outcome is column-asymmetric by nature; §8). No documented top-level `provider` key: the day-1 probe decides; else `GET /api/v1/generation?id=` once per run per model, sampled per call. `usage` is always present (`usage.include` deprecated); `usage.cost` is in **credits** → `cost_usd`, `cost_source: openrouter_usage`.
 
 ```python
-PINS = {"anthropic/claude-sonnet-5.5": ("anthropic", []), "anthropic/claude-haiku-5.5": ("anthropic", []),
-        "openai/gpt-6-luna": ("openai", []), "qwen/qwen3.8-27b": ("deepinfra", ["bf16"])}
+PINS = {
+    "anthropic/claude-sonnet-5.5": ("anthropic", []),
+    "anthropic/claude-haiku-5.5": ("anthropic", []),
+    "openai/gpt-6-luna": ("openai", []),
+    "qwen/qwen3.8-27b": ("deepinfra", ["bf16"]),
+}
 slug, quant = PINS[model]
-extra_body = {"provider": {"order": [slug], "allow_fallbacks": False, "require_parameters": True,
-                           "quantizations": quant, "data_collection": "deny"},
-              "reasoning": reasoning_for(model)}     # {"effort": "none"} | {"effort": "low"} for Sonnet; Gemini, if routed here: thinking_level low
+extra_body = {
+    "provider": {
+        "order": [slug],
+        "allow_fallbacks": False,
+        "require_parameters": True,
+        "quantizations": quant,
+        "data_collection": "deny",
+    },
+    "reasoning": reasoning_for(model),
+}  # {"effort": "none"} | {"effort": "low"} for Sonnet; Gemini, if routed here: thinking_level low
 ```
 
 **Gemini.** Day-1 probe: one `google/gemini-3.5-flash-lite` tool call through OpenRouter with `reasoning_details` echoed on round two. If the thought signature survives, Gemini runs through OpenRouter (Google AI Studio slug pinned) and `gemini.py` leaves v0. Otherwise Phase 3 builds native `google-genai`: `generate_content` with `FunctionDeclaration(parameters_json_schema=…)`, `AutomaticFunctionCallingConfig(disable=True)`, `temperature=0`, `ThinkingConfig(thinking_level="low")`. Either route runs the grid at `thinking_level: "low"` (Google documents that the default `minimal` "can cause premature tool termination on multi-step tasks"); `minimal` is used only for the sensitivity run on the stability subset. Gemini 3 validates **thought signatures** (first `functionCall` of a parallel group, each part when sequential; missing → 400), so `response.candidates[0].content` is appended **unchanged**, then one `Content(role="tool")` with all `Part.from_function_response` parts in call order. Empty `candidates` → `blocked_by_provider`; `candidate.finish_reason` stored; `thinking_level` in `params_sent`; `skip_thought_signature_validator` never in measured runs. Semaphore 2, `--rpm 8`; the free-tier key is for dev probes only.
@@ -166,11 +189,19 @@ SQLite `cache/responses.sqlite` (git-ignored): `journal_mode=WAL`, `busy_timeout
 
 ```python
 def cache_key(req: Request, salt: str | None = None) -> str:
-    doc = {"provider": req.provider, "model": req.model,
-           "messages": [m.canonical() for m in req.messages],       # internal model; bytes as base64
-           "tools": req.tools_canonical, "params": req.params_sent, "provider_prefs": req.prefs,
-           "cache_schema": CACHE_SCHEMA, "salt": salt}
-    return sha256(json.dumps(doc, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+    doc = {
+        "provider": req.provider,
+        "model": req.model,
+        "messages": [m.canonical() for m in req.messages],  # internal model; bytes as base64
+        "tools": req.tools_canonical,
+        "params": req.params_sent,
+        "provider_prefs": req.prefs,
+        "cache_schema": CACHE_SCHEMA,
+        "salt": salt,
+    }
+    return sha256(
+        json.dumps(doc, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+    ).hexdigest()
 ```
 
 **Shards.** `afandem cache export` writes **immutable** `(model, run_id)` shards (`cache/shards/<model>-<run_id>.jsonl.gz`; gzip does not delta-compress, so rewriting would bloat git history). Export runs **after every paid run**, including the `--budget` stop path (a manual export script is fine in the pilot); the end-of-session rule in `LOG.md` copies shards and `runs/` off the laptop (second disk or a private HF dataset). Published model shards live in the **`afandem-traces` Hugging Face repo at a pinned revision**, and `afandem reproduce --tag v0` downloads that revision, re-scores, and diffs the regenerated `summary.json` against the committed one; **judge and probe shards stay in the main repo's git permanently** (≈ 5,000 × ~1 KB) so re-scoring never calls a retired judge. `--no-cache` adds a repeat salt (stability subset; the judge's 10% second pass).

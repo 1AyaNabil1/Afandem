@@ -1,8 +1,26 @@
+# secrets and local-only notes
 .env
+.env.*
+!.env.example
+CLAUDE.local.md
+
+# runtime artefacts (shards are exported deliberately, never the live database)
 cache/*.sqlite
+cache/*.sqlite-*
 runs/
+
+# private material that never enters this repo
+private/
 drafts/
+
+# python
 .venv/
 __pycache__/
 *.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+dist/
+
+# os
 .DS_Store

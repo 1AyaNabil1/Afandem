@@ -1,0 +1,194 @@
+{
+  "snapshot": "models-2026-11-05.json",
+  "models": {
+    "anthropic/claude-sonnet-5.5": {
+      "params_sent": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "reasoning": {
+          "effort": "low"
+        }
+      },
+      "dropped_unsupported": [
+        "seed",
+        "temperature"
+      ],
+      "supports_tools": true,
+      "reasoning_info": {
+        "mandatory": true,
+        "supported_efforts": [
+          "max",
+          "xhigh",
+          "high",
+          "medium",
+          "low"
+        ],
+        "default_effort": "high"
+      },
+      "pinned_provider": "anthropic",
+      "pricing_per_token": {
+        "prompt": "0.000002",
+        "completion": "0.00001",
+        "web_search": "0.01",
+        "input_cache_read": "0.0000001",
+        "input_cache_write": "0.0000025",
+        "input_cache_write_1h": "0.000004"
+      }
+    },
+    "anthropic/claude-haiku-5.5": {
+      "params_sent": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "reasoning": {
+          "effort": "none"
+        }
+      },
+      "dropped_unsupported": [
+        "seed",
+        "temperature"
+      ],
+      "supports_tools": true,
+      "reasoning_info": {
+        "mandatory": false,
+        "supported_efforts": [
+          "max",
+          "xhigh",
+          "high",
+          "medium",
+          "low",
+          "none"
+        ],
+        "default_effort": "medium"
+      },
+      "pinned_provider": "anthropic",
+      "pricing_per_token": {
+        "prompt": "0.0000001",
+        "completion": "0.0000005",
+        "web_search": "0.01",
+        "input_cache_read": "0.00000001",
+        "input_cache_write": "0.000000125",
+        "input_cache_write_1h": "0.0000002",
+        "overrides": [
+          {
+            "min_prompt_tokens": 100000,
+            "prompt": "0.0000005",
+            "completion": "0.0000025",
+            "input_cache_read": "0.00000005",
+            "input_cache_write": "0.000000625",
+            "input_cache_write_1h": "0.000001"
+          }
+        ]
+      }
+    },
+    "openai/gpt-6-luna": {
+      "params_sent": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "seed": 42,
+        "reasoning": {
+          "effort": "none"
+        }
+      },
+      "dropped_unsupported": [
+        "temperature"
+      ],
+      "supports_tools": true,
+      "reasoning_info": {
+        "mandatory": false,
+        "default_enabled": true,
+        "supported_efforts": [
+          "max",
+          "xhigh",
+          "high",
+          "medium",
+          "low",
+          "none"
+        ],
+        "default_effort": "medium"
+      },
+      "pinned_provider": "openai",
+      "pricing_per_token": {
+        "prompt": "0.0000001",
+        "completion": "0.0000005",
+        "web_search": "0.01",
+        "input_cache_read": "0.00000001",
+        "input_cache_write": "0.000000125",
+        "overrides": [
+          {
+            "min_prompt_tokens": 272000,
+            "prompt": "0.0000002",
+            "completion": "0.00000075",
+            "input_cache_read": "0.00000002",
+            "input_cache_write": "0.00000025"
+          }
+        ]
+      }
+    },
+    "qwen/qwen3.8-27b": {
+      "params_sent": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "temperature": 0,
+        "seed": 42,
+        "reasoning": {
+          "effort": "none"
+        }
+      },
+      "dropped_unsupported": [],
+      "supports_tools": true,
+      "reasoning_info": {
+        "mandatory": false,
+        "default_enabled": true,
+        "supported_efforts": [
+          "xhigh",
+          "medium",
+          "low",
+          "none"
+        ],
+        "default_effort": "xhigh"
+      },
+      "pinned_provider": "deepinfra",
+      "pricing_per_token": {
+        "prompt": "0.00000015",
+        "completion": "0.000001875",
+        "input_cache_read": "0.0000000375"
+      }
+    },
+    "google/gemini-3.5-flash-lite": {
+      "params_sent": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "temperature": 0,
+        "seed": 42,
+        "reasoning": {
+          "effort": "low"
+        }
+      },
+      "dropped_unsupported": [],
+      "supports_tools": true,
+      "reasoning_info": {
+        "mandatory": true,
+        "default_enabled": true,
+        "supported_efforts": [
+          "high",
+          "medium",
+          "low",
+          "minimal"
+        ],
+        "default_effort": "minimal"
+      },
+      "pinned_provider": "google-ai-studio",
+      "pricing_per_token": {
+        "prompt": "0.0000003",
+        "completion": "0.0000025",
+        "image": "0.0000003",
+        "audio": "0.0000003",
+        "input_audio_cache": "0.00000003",
+        "web_search": "0.014",
+        "internal_reasoning": "0.0000025",
+        "input_cache_read": "0.00000003",
+        "input_cache_write": "0.0000000833333333333333"
+      }
+    }
+  }
+}

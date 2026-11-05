@@ -1,0 +1,66 @@
+[project]
+name = "afandem"
+version = "0.0.1"
+description = "Does an LLM agent still act correctly when the request is in Egyptian Arabic, Arabizi or code-switched Egyptian? A paired tool-use benchmark."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Aya Nabil" }]
+requires-python = ">=3.13"
+dependencies = [
+    "openai>=3.45,<4",
+    "google-genai>=2.34,<3",
+    "pydantic>=2.14,<2.15",
+    "numpy>=2",
+    "scipy>=1.14",
+    "tzdata>=2025.1",
+]
+classifiers = [
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Natural Language :: Arabic",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Repository = "https://github.com/1AyaNabil1/Afandem"
+Dataset = "https://huggingface.co/datasets/AyaNabil111/afandem"
+
+[project.scripts]
+afandem = "afandem.cli:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17",
+    "mypy>=1.20",
+    "pytest>=8",
+    "pytest-asyncio>=1.4",
+    "pre-commit>=4",
+]
+
+[build-system]
+requires = ["uv_build>=0.11,<0.12"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PL", "N"]
+ignore = ["PLR2004"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["PLR0913", "PLR0915"]
+"tests/*" = ["PLR2004"]
+
+[tool.mypy]
+strict = true
+python_version = "3.14"
+files = ["src", "tests", "scripts"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

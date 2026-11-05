@@ -22,7 +22,13 @@ The name is what an Egyptian service agent says to take your request — and wha
 
 ## Status
 
-**Design phase (November 2026).** The design and build plan is in [`docs/plan.md`](docs/plan.md), with the [dataset](docs/dataset-spec.md), [harness](docs/harness-spec.md) and [methodology](docs/methodology.md) specifications. Implementation starts with a 30-scenario pilot on two domains; results will appear here and on the Hugging Face dataset and leaderboard when they exist.
+**Phase 0 — setup (November 2026).** The design is in [`docs/plan.md`](docs/plan.md), with the [dataset](docs/dataset-spec.md), [harness](docs/harness-spec.md) and [methodology](docs/methodology.md) specifications. The hypotheses, analysis and sample-size rule are fixed in advance in [`docs/preregistration.md`](docs/preregistration.md) (tag `prereg-v1`). The code is a skeleton: no scenarios and no results yet. Next: a 30-scenario pilot on two domains.
+
+```bash
+uv sync
+uv run afandem run --fake      # offline check, no keys needed
+uv run pytest
+```
 
 ## Licence
 
