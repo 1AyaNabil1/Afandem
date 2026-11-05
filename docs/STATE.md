@@ -13,7 +13,7 @@
   - `scripts/calibrate_rules.py sample|kappa`: the blind κ check;
   - `scripts/review_sheet.py`: a Markdown review sheet of every scenario.
 - CI: 11 jobs behind `ci-ok`, CodeQL, the release workflow (strict lint refuses drafts) and Dependabot. See [ci.md](ci.md).
-- Versions: prompt `fe89ad7e0f42` (D23: the banking policy block now lists the customer's own accounts and cards), scorer 1.0, normaliser 2 (adds «امبارح»/yesterday as -1 day).
+- Versions: prompt `fe89ad7e0f42` (D23: the banking policy block now lists the customer's own accounts and cards), scorer 1.1, normaliser 2 (adds «امبارح»/yesterday as -1 day).
 
 **Live routes ([providers.md](providers.md)):**
 - Working: `gemini_free` (Gemini 3.5 Flash-Lite), `ollama_cloud` (Gemma 4 31B), `groq_gptoss` (gpt-oss-120b) and `groq_qwen` (Qwen3.8-27B). The two Groq routes run out of their **daily token quota** after about 60 items each; the harness stops them cleanly (exit code 4, outcome `quota`).
@@ -33,7 +33,11 @@
   - Gemini 60/60.
   - Gemma: EN 9/10, CS-Latin 7/10.
   - gpt-oss: Arabizi 3/8 vs MSA 7/8 (partial).
-- `drafts-pilot-2026-11-05`: all 30 × 6 columns × 4 models, started at night. Gemini and Gemma run through; **resume the Groq targets on 6 Nov** with `uv run --env-file .env afandem run --target gemini_free --target ollama_cloud --target groq_gptoss --target groq_qwen --scenarios data --run-id drafts-pilot-2026-11-05 --retry-errors`.
+- `drafts-pilot-2026-11-05`: all 30 × 6 × 4 started at night.
+  - Gemma finished all 180. Gemini stopped at its daily quota at 164 (28/28 EN … 26/27 Arabizi). Groq had no quota left.
+  - Banking ran clean: one Gemini Arabizi transfer made before asking which account; one Qwen English reply invented a failed beneficiary lookup without calling the tool.
+  - One draft fault was found: clinic-0014 had two free slots in its «بعد الضهر» window, so a model that correctly asked "which time?" could not succeed. It is now revision 2 with one free slot in the window.
+- **On 6 Nov, run everything as one fresh run** (cached calls replay free, so only the new items cost quota): `uv run --env-file .env afandem run --target gemini_free --target ollama_cloud --target groq_gptoss --target groq_qwen --scenarios data --run-id drafts-pilot-2026-11-06`. If a quota stops it, re-run the same command with `--retry-errors`. Then `afandem score` and `afandem report`.
 - Calibration files for D26 are in `runs/drafts-clinic-six-2026-11-05/calibration/`.
 
 **Waiting on Aya:**
@@ -63,13 +67,8 @@
    - The Hugging Face dataset `AyaNabil111/afandem` is private, with a skeleton card.
 
 **Next for the build:**
-- Resume the Groq models on 6 Nov. Then score and report `drafts-pilot-2026-11-05` as a first look, and read every failure by hand.
-- Rule-classifier fixes found by the κ check:
-  - courtesy suppression drops real questions that contain «أساعدك»;
-  - «تم إلغاء طلب الإلغاء» is read as claims-done;
-  - Arabizi choice words are missing.
-  - Fix them, then re-check κ on a **fresh** sample from the pilot run, both domains.
-- `docs/harness-spec.md` §10 still says the oracle covers only act and ask items; it now covers inform too.
+- Run `drafts-pilot-2026-11-06` (above); score and report it as a first look, and read every failure by hand.
+- Re-check κ on a **fresh** sample from that run: `scripts/calibrate_rules.py sample … --exclude runs/drafts-clinic-six-2026-11-05/calibration/key.json`, a blind labeller, then `kappa`. The two rule bugs are fixed in scorer 1.1 (D26). Arabizi choice words (`ay wa7ed`, `aw`) are still missing from the alternative markers.
 
 **Standing practice:** after every meaningful change, add an Egyptian Arabic X post with Chrome screenshots at the top of Brain note `08 — X Thread (Egyptian Arabic).md` (images in `x-media/`).
 

@@ -1,12 +1,17 @@
 {
   "schema_version": "1.0",
   "id": "clinic-0014",
-  "revision": 1,
+  "revision": 2,
   "changelog": [
     {
       "revision": 1,
       "date": "2026-11-05",
       "note": "drafted by the AI assistant at the author's request (pilot batch); every column is assistant_draft and awaits her review and rewrite; dialect wording checked against public writing (docs/attestations.md)"
+    },
+    {
+      "revision": 2,
+      "date": "2026-11-05",
+      "note": "one free slot in the «بعد الضهر» window (16:30 now taken): with two, a model that correctly asks which time could not succeed, because the scripted confirmation does not name one"
     }
   ],
   "authoring_batch": "pilot",
@@ -135,7 +140,7 @@
         "doctor_id": "d_11",
         "date": "2026-11-25",
         "time": "16:30",
-        "free": true
+        "free": false
       },
       {
         "doctor_id": "d_11",
@@ -159,10 +164,7 @@
     "date": "2026-11-25",
     "date_weekday": "Wednesday",
     "days_ahead": 1,
-    "time": [
-      "15:30",
-      "16:30"
-    ],
+    "time": "15:30",
     "time_window": "15:00-17:00",
     "visit_type": "consultation"
   },
@@ -186,8 +188,7 @@
           "doctor_id": "d_11",
           "date": "2026-11-25",
           "time": [
-            "15:30",
-            "16:30"
+            "15:30"
           ],
           "visit_type": "consultation"
         }
