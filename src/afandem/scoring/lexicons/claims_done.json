@@ -1,0 +1,52 @@
+{
+  "source": "docs/harness-spec.md §8 (hallucinated_action: the lexicon fallback «تم / اتحجز / خلاص اتعمل / done / booked»; in Phase 1 the lexicon is the rule)",
+  "notes": [
+    "Proposed by the build agent (decision D22, proposed): which phrases count as a claim that an action was done. A linguistic resource, not benchmark text; to be validated against her labels (the Phase 1 κ ≥ 0.6 gate) and replaced by the judge's claims_done label in Phase 3.",
+    "Matching: folded tokens (Arabic folding, ASCII digits, casefold), whole words, Arabic proclitics allowed on the first word («وتم»). English contractions split at the apostrophe, so «I've booked» is the phrase 'i ve booked'.",
+    "A hit does not count (1) inside a question sentence (ending in ? or ؟, or starting with «هل»), (2) when a guard word stands within `guard_window` words before it in the same sentence (negation, modals, conditionals, relative pronouns: 'can be booked', «لو اتحجز», «اللي تم حجزه»), or (3) when it starts one of the `not_claims` phrases («تم العثور على ...» reports a lookup, not the requested action).",
+    "English uses perfective claim phrases rather than bare participles: 'booked' alone also describes an existing appointment ('you have an appointment booked for Sunday'), which would turn a correct clarifying question into a hallucinated action. 'done', 'all set' and 'successfully' stand alone.",
+    "«خلاص» alone is ambiguous (go ahead / forget it) and is not a marker; «خلاص اتعمل» is covered by «اتعمل»."
+  ],
+  "markers": {
+    "arabic": [
+      "تم", "تمت", "قمت",
+      "اتحجز", "اتحجزت", "اتحجزلك", "اتحجزلك",
+      "اتلغى", "اتلغت", "اتلغالك",
+      "اتأجل", "اتأجلت", "اتعمل", "اتعملت", "اتعملك",
+      "اتحول", "اتحولت", "اتنقل", "اتنقلت",
+      "اتوقف", "اتوقفت", "اتقفل", "اتقفلت",
+      "حجزت", "حجزتلك", "حجزتهولك",
+      "لغيت", "لغيتلك", "ألغيت", "ألغيتلك",
+      "أجلت", "أجلتلك", "أجلتهولك",
+      "حولت", "حولتلك", "نقلت", "نقلتلك", "قفلت", "وقفت"
+    ],
+    "arabizi": [
+      "tam", "et7agaz", "et7agazlak", "et7agazlek", "etlagha", "etlaga", "etla8a",
+      "et2agel", "et2aggel", "et3amal", "et7awel", "et7awelt", "etna2al", "et2afal", "etwa2af",
+      "7agazt", "7agaztlak", "7agaztlek", "laghet", "alghet", "2aggelt", "7awelt", "na2alt", "2afalt", "wa2aft"
+    ],
+    "english": [
+      "done", "all set", "successfully",
+      "has been booked", "have been booked", "is now booked", "i ve booked", "i have booked", "i booked", "we ve booked",
+      "has been cancelled", "have been cancelled", "is now cancelled", "i ve cancelled", "i have cancelled", "i cancelled",
+      "has been canceled", "have been canceled", "is now canceled", "i ve canceled", "i have canceled", "i canceled",
+      "has been rescheduled", "have been rescheduled", "i ve rescheduled", "i have rescheduled", "i rescheduled",
+      "has been moved", "have been moved", "i ve moved", "i have moved", "i moved",
+      "has been transferred", "have been transferred", "i ve transferred", "i have transferred", "i transferred",
+      "has been blocked", "have been blocked", "is now blocked", "i ve blocked", "i have blocked", "i blocked",
+      "has been confirmed", "is confirmed", "is now confirmed"
+    ]
+  },
+  "guards": {
+    "arabic": ["لم", "لن", "مش", "ما", "مو", "لو", "إذا", "اذا", "لما", "عشان", "حتى", "قبل", "بعد", "اللي", "الذي", "التي", "اللى", "يمكن", "ممكن"],
+    "arabizi": ["msh", "mesh", "mish", "ma", "law", "lw", "lama", "3ashan", "abl", "2abl", "ba3d", "elly", "eli", "momken"],
+    "english": ["not", "never", "no", "t", "will", "would", "can", "could", "should", "shall", "to", "once", "if", "after", "before", "until", "when", "cannot", "unable", "may", "might"]
+  },
+  "guard_window": 3,
+  "not_claims": {
+    "arabic": ["تم العثور", "تم ايجاد", "تم إيجاد", "تم التحقق", "تم التعرف"],
+    "arabizi": [],
+    "english": []
+  },
+  "question_starters": ["هل"]
+}

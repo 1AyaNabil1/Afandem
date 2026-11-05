@@ -5,6 +5,8 @@
                 [--repeat K] [--concurrency N] [--overrides FILE] [--strict-drift] [--dry-run]
     afandem show RUN_DIR [--scenario ID] [--column C]
     afandem summary RUN_DIR
+    afandem score RUN_DIR [--scenarios PATH]
+    afandem report RUN_DIR [--scenarios PATH] [--results-dir results]
     afandem data lint PATH [--manual] [--canary-guid GUID] [--allow-drafts]
 
 `afandem run` without `--fake` and without any provider key exits with code 2 before anything
@@ -13,6 +15,12 @@ Exit codes of `run`: 0 done, 2 usage or setup error, 3 budget stop, 4 quota stop
 (`--strict-drift`). `data lint` exits 0 without errors, 1 with errors, 2 when PATH holds no
 scenarios; `--allow-drafts` reports `assistant_draft` provenance as warnings (CI on pushes and
 pull requests), never other provenance values, and the release workflow lints without it.
+
+`score` re-scores a run offline from `traces.jsonl` (never modified) with the current scenario
+files into `RUN_DIR/scores.jsonl`, warning per line when a scenario changed since the run;
+`show` and `summary` prefer `scores.jsonl` when it exists. `report` writes
+`<results-dir>/<run_id>/summary.json` and `report.md` (descriptive only). Both exit 0 on
+success and 2 on a usage or data error.
 """
 
 import argparse
@@ -38,6 +46,7 @@ from afandem.providers.fake import (
 )
 from afandem.providers.http import ProviderConfigError
 from afandem.providers.routes import MissingKeyError, build_provider, route_names
+from afandem.report import StaleScoresError, write_report
 from afandem.runner import (
     RunOptions,
     RunTarget,
@@ -49,7 +58,8 @@ from afandem.runner import (
 from afandem.runner import run as run_items
 from afandem.scenarios import COLUMNS, LoadedScenario, ScenarioLoadError, load_scenarios
 from afandem.scenarios.schema import Column
-from afandem.scoring import PatchError
+from afandem.scoring import NORMALISER_VERSION, SCORER_VERSION, PatchError
+from afandem.scoring.rescore import read_scores, rescore_run
 from afandem.trace import (
     INDEX_FILE,
     RunExistsError,
@@ -131,6 +141,19 @@ def _build_parser() -> argparse.ArgumentParser:
 
     summary = sub.add_parser("summary", help="task-success counts per target and column")
     summary.add_argument("run_dir", type=Path)
+
+    score = sub.add_parser("score", help="re-score a run from its traces (offline)")
+    score.add_argument("run_dir", type=Path)
+    score.add_argument(
+        "--scenarios", type=Path, default=Path("data"), help="scenario file or directory"
+    )
+
+    report = sub.add_parser("report", help="descriptive report: summary.json and report.md")
+    report.add_argument("run_dir", type=Path)
+    report.add_argument(
+        "--scenarios", type=Path, default=Path("data"), help="scenario file or directory"
+    )
+    report.add_argument("--results-dir", type=Path, default=Path("results"))
 
     data = sub.add_parser("data", help="scenario data tools")
     data_sub = data.add_subparsers(dest="data_command")
@@ -366,9 +389,14 @@ def _run_with(  # noqa: PLR0911, PLR0913
 
 
 def _records(run_dir: Path) -> dict[str, dict[str, Any]]:
+    """The latest record per item, its `scores` replaced by `scores.jsonl` when present."""
     if not (run_dir / INDEX_FILE).exists():
         raise FileNotFoundError(f"{run_dir} has no {INDEX_FILE}")
-    return latest_records(run_dir)
+    records = latest_records(run_dir)
+    for key, line in read_scores(run_dir).items():
+        if key in records:
+            records[key] = {**records[key], "scores": line["scores"]}
+    return records
 
 
 def _call_line(call: dict[str, Any]) -> str:
@@ -406,6 +434,15 @@ def _show_record(record: dict[str, Any]) -> None:
         f"unsafe_read={scores.get('unsafe_read')} unsafe_write={scores.get('unsafe_write')}"
         + (f"  reasons: {'; '.join(scores.get('reasons') or [])}" if scores.get("reasons") else "")
     )
+    if scores.get("scorer_version"):
+        print(
+            f"metrics ({scores.get('scorer_version')}): turn1={scores.get('turn1_label')}"
+            + (f"/{scores.get('turn1_about')}" if scores.get("turn1_about") else "")
+            + f" hallucinated_action={scores.get('hallucinated_action')}"
+            f" tool_selection={scores.get('tool_selection')}"
+            f" arg_accuracy={scores.get('arg_accuracy')} valid={scores.get('valid')}"
+            f" reply_lang={scores.get('reply_lang_l1')}/{scores.get('reply_lang_match')}"
+        )
     calls = {c.get("call_id"): c for c in record.get("tool_calls", [])}
     for message in record.get("messages", []):
         role = message.get("role")
@@ -467,7 +504,11 @@ def _summary(run_dir: Path) -> int:
         cell[1] += 1
     targets = sorted({t for t, _ in cells} | set(unscored))
     columns = [c for c in COLUMNS if any(col == c for _, col in cells)]
-    print(f"task success (successes/scored items), {run_dir.name}; descriptive only")
+    source = "scores.jsonl" if read_scores(run_dir) else "traces"
+    print(
+        f"task success (successes/scored items), {run_dir.name}; descriptive only; "
+        f"scores from {source}"
+    )
     width = max([len("target"), *(len(t) for t in targets)])
     print(" | ".join(["target".ljust(width), *(c.rjust(8) for c in columns), "unscored"]))
     for target in targets:
@@ -478,6 +519,36 @@ def _summary(run_dir: Path) -> int:
         print(" | ".join([target.ljust(width), *row, str(unscored.get(target, 0)).rjust(8)]))
     if not targets:
         print("(no items)")
+    return 0
+
+
+def _score(run_dir: Path, scenarios_path: Path) -> int:
+    if not (run_dir / INDEX_FILE).exists():
+        return _error(f"score: {run_dir} has no {INDEX_FILE}")
+    try:
+        scenarios = load_scenarios(scenarios_path)
+        result = rescore_run(
+            run_dir, scenarios, warn=lambda message: print(f"warning: {message}", file=sys.stderr)
+        )
+    except (ScenarioLoadError, PatchError, TraceCorruptError, OSError, ValueError) as exc:
+        return _error(f"score: {exc}")
+    print(
+        f"scored {result.items} item(s) ({result.scored} scored, {result.excluded} excluded; "
+        f"{len(result.changed)} with a changed scenario, {len(result.missing)} without one) "
+        f"with scorer {SCORER_VERSION} / normaliser {NORMALISER_VERSION} -> {result.path}"
+    )
+    return 0
+
+
+def _report(run_dir: Path, scenarios_path: Path, results_dir: Path) -> int:
+    if not (run_dir / INDEX_FILE).exists():
+        return _error(f"report: {run_dir} has no {INDEX_FILE}")
+    try:
+        scenarios = load_scenarios(scenarios_path)
+        summary_path, report_path = write_report(run_dir, scenarios, results_dir)
+    except (ScenarioLoadError, StaleScoresError, TraceCorruptError, OSError, ValueError) as exc:
+        return _error(f"report: {exc}")
+    print(f"report: {summary_path} and {report_path}")
     return 0
 
 
@@ -508,7 +579,7 @@ def _data_lint(path: Path, *, manual: bool, canary_guid: str | None, allow_draft
     return 0 if report.ok else 1
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911 (one per command)
     args = _build_parser().parse_args(argv)
     if args.command == "run":
         return _run(args)
@@ -516,6 +587,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _show(args.run_dir, args.scenario, args.column)
     if args.command == "summary":
         return _summary(args.run_dir)
+    if args.command == "score":
+        return _score(args.run_dir, args.scenarios)
+    if args.command == "report":
+        return _report(args.run_dir, args.scenarios, args.results_dir)
     if args.command == "data" and args.data_command == "lint":
         return _data_lint(
             args.path,

@@ -13,11 +13,15 @@ answer. Oracle per behaviour:
 - `act`: the expected writes (first value of any acceptable-value list) in round 1, then a
   reply; a clinic write on another patient's record is preceded, in the same round, by the
   `find_patient` call (name and phone from the state) that the third-party rule requires;
-- `ask`: turn 1 a clarifying question (no call); after the follow-up the writes, then a reply;
+- `ask`: turn 1 a clarifying question naming the `expected_clarification` slot (no call);
+  after the follow-up the writes, then a reply;
 - `inform`: the `read_calls`, then a reply containing `str(answer_must_contain[0].value)`;
 - `none`, `refuse`, `out_of_scope`: a reply, no calls.
 
-Reply texts are neutral placeholders (`[fake] done`), never natural utterances.
+Reply texts are neutral placeholders (`[fake] done`), never natural utterances. Each carries a
+script tag for its column (`SCRIPT_TAGS`: an Arabic-script tag on `msa`/`egy`/`cs`, a
+digit-letter tag on `arabizi`/`cs_latin`, none on `en`) so the reply-language scorer sees the
+column's script; `english_reply` drops the tag.
 
 Overrides (a JSON file or a dict) script failure modes and near-misses. Keys, most specific
 first: `"<scenario_id>|<column>"`, `"<scenario_id>"`, `"*|<column>"`, `"*"`; a value is a mode
@@ -42,6 +46,15 @@ name or `{"mode": <mode>, "latency_ms": <int>}`. Modes:
 - `hallucinated_action`: claims done in every turn, never calls;
 - `hallucinated_then_recover`: claims done in turn 1, acts after the confirmation;
 - `round_cap`: harmless reads forever (flag `round_cap_hit`);
+- `tool_use_failed`: the first scripted call comes back as Groq's HTTP 400 `tool_use_failed`
+  (an unparseable generation), through the HTTP provider's own converter (`failed_tool_call`):
+  one malformed call, flag `tool_use_failed`, the turn ends;
+- `ask_other`: an `ask` item's turn-1 question names another slot than `expected_clarification`;
+- `comply`: a harmful or no-action item calls every `must_not_call` tool it can fill from the
+  scenario's `slots` and `user_identity` (reads first), then claims done;
+- `retry_after_error`: every scripted write is first sent with its record id mangled
+  (`a_9` -> `a_9_x`, `not_found`), then as the oracle sends it: the right end state by another
+  path (tool selection fails, `process_match` False);
 - near-misses the scorer must fail: `near_miss_date` (every write date + 1 day),
   `near_miss_id` (the first of doctor/account/appointment/patient id swapped for another record
   of the same kind), `near_miss_phone_digits` (Arabic-Indic digits in a phone argument).
@@ -72,8 +85,10 @@ from afandem.providers.base import (
     UserMsg,
     canonical_json,
 )
+from afandem.providers.http import failed_tool_call
 from afandem.providers.wire import EmbeddedError, messages_from_wire, parse_chat_completion
 from afandem.providers.wire import request_body as wire_request_body
+from afandem.sandbox import DOMAINS
 from afandem.scenarios import Scenario
 from afandem.scenarios.schema import Column
 
@@ -94,6 +109,10 @@ Mode = Literal[
     "hallucinated_action",
     "hallucinated_then_recover",
     "round_cap",
+    "tool_use_failed",
+    "ask_other",
+    "comply",
+    "retry_after_error",
     "near_miss_date",
     "near_miss_id",
     "near_miss_phone_digits",
@@ -116,6 +135,24 @@ REPLY_QUESTION: Final = "[fake] question"
 REPLY_NO_ACTION: Final = "[fake] reply"
 REPLY_CLIPPED: Final = "[fake] clipped"
 EN_MARKER: Final = "[fake en]"
+ARABIC_TAG: Final = (
+    " [\N{ARABIC LETTER NOON}\N{ARABIC LETTER SAD} "
+    "\N{ARABIC LETTER AIN}\N{ARABIC LETTER REH}\N{ARABIC LETTER BEH}\N{ARABIC LETTER YEH} "
+    "\N{ARABIC LETTER BEH}\N{ARABIC LETTER DAL}\N{ARABIC LETTER YEH}\N{ARABIC LETTER LAM} "
+    "\N{ARABIC LETTER LAM}\N{ARABIC LETTER LAM}\N{ARABIC LETTER ALEF}\N{ARABIC LETTER KHAH}"
+    "\N{ARABIC LETTER TEH}\N{ARABIC LETTER BEH}\N{ARABIC LETTER ALEF}\N{ARABIC LETTER REH}]"
+)
+ARABIZI_TAG: Final = " [3arabizi]"
+SCRIPT_TAGS: Final[dict[str, str]] = {
+    "en": "",
+    "msa": ARABIC_TAG,
+    "egy": ARABIC_TAG,
+    "cs": ARABIC_TAG,
+    "arabizi": ARABIZI_TAG,
+    "cs_latin": ARABIZI_TAG,
+}
+"""Script placeholders appended to every reply of a column (a neutral tag, not a text)."""
+OTHER_SLOTS: Final = ("phone", "time", "date", "doctor", "name")
 
 _ALEF: Final = "\N{ARABIC LETTER ALEF}"
 _TO_ARABIC_INDIC: Final = {ord("0") + i: 0x0660 + i for i in range(10)}
@@ -187,6 +224,8 @@ class Step:
     fail: FailureOutcome | None = None
     status: int | None = None
     embedded_error: bool = False
+    tool_use_failed: bool = False
+    """Answer as Groq's HTTP 400 `tool_use_failed` with the first call as the generation."""
 
     def finish_reason(self) -> str:
         if self.finish is not None:
@@ -246,6 +285,11 @@ def _harmless_read(scenario: Scenario) -> Call:
     return Call("list_doctors", {})
 
 
+def question(slot: str | None) -> str:
+    """The placeholder clarifying question, naming the slot asked about."""
+    return f"{REPLY_QUESTION}: {slot.replace('_', ' ')}?" if slot else f"{REPLY_QUESTION}?"
+
+
 def oracle_script(scenario: Scenario) -> Script:
     expected = scenario.expected
     writes = [Call(c.name, _first_values(c.args)) for c in expected.tool_calls]
@@ -254,9 +298,8 @@ def oracle_script(scenario: Scenario) -> Script:
         case "act":
             return Script({1: [act_round, Step(content=REPLY_DONE)]})
         case "ask":
-            return Script(
-                {1: [Step(content=REPLY_QUESTION)], 2: [act_round, Step(content=REPLY_DONE)]}
-            )
+            asked = Step(content=question(expected.expected_clarification))
+            return Script({1: [asked], 2: [act_round, Step(content=REPLY_DONE)]})
         case "inform":
             reads = tuple(Call(c.name, _first_values(c.args)) for c in expected.read_calls or [])
             answers = expected.answer_must_contain or []
@@ -420,7 +463,8 @@ def _question_and_write(scenario: Scenario, script: Script) -> Script:
         raise OverrideNotApplicableError("question_and_write needs an act or ask item")
     turn, index = _require_calls(scenario, script, "question_and_write")
     writes = script.turns[turn][index]
-    return Script({1: [replace(writes, content=REPLY_QUESTION), Step(content=REPLY_QUESTION)]})
+    asked = question(scenario.expected.expected_clarification)
+    return Script({1: [replace(writes, content=asked), Step(content=asked)]})
 
 
 def _english_reply(scenario: Scenario, script: Script) -> Script:
@@ -475,6 +519,69 @@ def _round_cap(scenario: Scenario, script: Script) -> Script:
     return Script({1: [Step(calls=(_harmless_read(scenario),))] * 12})
 
 
+def _tool_use_failed(scenario: Scenario, script: Script) -> Script:
+    turn, index = _require_calls(scenario, script, "tool_use_failed")
+    first = script.turns[turn][index]
+    script.turns[turn] = [*script.turns[turn][:index], replace(first, tool_use_failed=True)]
+    return script
+
+
+def _ask_other(scenario: Scenario, script: Script) -> Script:
+    wanted = scenario.expected.expected_clarification
+    if scenario.behaviour != "ask" or wanted is None:
+        raise OverrideNotApplicableError("ask_other needs an ask item")
+    other = next(slot for slot in OTHER_SLOTS if slot not in wanted)
+    script.turns[1] = [Step(content=question(other))]
+    return script
+
+
+def _fill(scenario: Scenario, name: str) -> Call | None:
+    """A call to `name` with every argument taken from the slots or the identity, if any."""
+    _, registry = DOMAINS[scenario.domain]
+    if name not in registry:
+        return None
+    sources: dict[str, object] = {**scenario.user_identity, **scenario.slots}
+    args: JSONDict = {}
+    for arg, info in registry[name].args_model.model_fields.items():
+        value = sources.get(arg)
+        if isinstance(value, str | int) and not isinstance(value, bool):
+            args[arg] = value
+        elif info.is_required():
+            return None
+    return Call(name, args)
+
+
+def _comply(scenario: Scenario, script: Script) -> Script:
+    if scenario.behaviour not in ("refuse", "none", "out_of_scope"):
+        raise OverrideNotApplicableError("comply needs a refuse, none or out_of_scope item")
+    _, registry = DOMAINS[scenario.domain]
+    names = sorted(scenario.expected.must_not_call, key=lambda n: registry[n].mutates)
+    calls = tuple(c for c in (_fill(scenario, n) for n in names) if c is not None)
+    if not calls:
+        raise OverrideNotApplicableError(f"comply: no must_not_call tool fits {scenario.id}")
+    return Script({1: [Step(calls=calls), Step(content=REPLY_DONE)]})
+
+
+def _retry_after_error(scenario: Scenario, script: Script) -> Script:
+    is_write = _writes_only(scenario)
+    applied = False
+    for turn, index in _write_steps(script):
+        step = script.turns[turn][index]
+        calls: list[Call] = []
+        for call in step.calls:
+            key = next(
+                (k for k in _ID_SWAPS if isinstance(call.args, dict) and k in call.args), None
+            )
+            if is_write(call) and key is not None and isinstance(call.args, dict):
+                calls.append(replace(call, args={**call.args, key: f"{call.args[key]}_x"}))
+                applied = True
+            calls.append(call)
+        script.turns[turn][index] = replace(step, calls=tuple(calls))
+    if not applied:
+        raise OverrideNotApplicableError(f"retry_after_error does not apply to {scenario.id}")
+    return script
+
+
 def _near_miss_date(scenario: Scenario, script: Script) -> Script:
     return _map_calls(scenario, script, _only_writes(scenario, _shift_dates), "near_miss_date")
 
@@ -505,6 +612,10 @@ _TRANSFORMS: Final[dict[Mode, Transform]] = {
     "hallucinated_action": _hallucinated_action,
     "hallucinated_then_recover": _hallucinated_then_recover,
     "round_cap": _round_cap,
+    "tool_use_failed": _tool_use_failed,
+    "ask_other": _ask_other,
+    "comply": _comply,
+    "retry_after_error": _retry_after_error,
     "near_miss_date": _near_miss_date,
     "near_miss_id": _near_miss_id,
     "near_miss_phone_digits": _near_miss_phone_digits,
@@ -535,6 +646,7 @@ class FakeModel:
         self.override = override or Override()
         self.target = target
         self.script = build_script(scenario, self.override.mode)
+        self.tag = "" if self.override.mode == "english_reply" else SCRIPT_TAGS[column]
         self.requests = 0
 
     def _position(self, request: Request) -> tuple[int, int, JSONDict]:
@@ -548,7 +660,8 @@ class FakeModel:
         return turn, round_, body
 
     def _response(self, step: Step, turn: int, round_: int, body: JSONDict) -> JSONDict:
-        message: JSONDict = {"role": "assistant", "content": step.content}
+        content = f"{step.content}{self.tag}" if step.content else step.content
+        message: JSONDict = {"role": "assistant", "content": content}
         if step.calls:
             message["tool_calls"] = [
                 {
@@ -583,6 +696,14 @@ class FakeModel:
             raise ProviderOutcomeError(
                 step.fail, f"fake {step.fail} (HTTP {step.status})", status=step.status
             )
+        if step.tool_use_failed:
+            generation = json.dumps(
+                {"name": step.calls[0].name, "arguments": step.calls[0].wire_arguments()}
+            )
+            error = {"code": "tool_use_failed", "failed_generation": generation[:-12]}
+            failed = failed_tool_call({"error": error}, self.override.latency_ms)
+            assert failed is not None
+            return failed
         if step.embedded_error:
             response: JSONDict = {"error": {"code": 500, "message": "fake embedded error"}}
         else:
@@ -633,4 +754,5 @@ __all__ = [
     "load_overrides",
     "oracle_script",
     "override_for",
+    "question",
 ]

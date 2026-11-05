@@ -44,7 +44,7 @@ from afandem.providers.base import BudgetExhaustedError, CallBudget, JSONDict, P
 from afandem.sandbox import DOMAINS
 from afandem.scenarios import COLUMNS, LoadedScenario, Scenario
 from afandem.scenarios.schema import Column
-from afandem.scoring import SCORER_VERSION, expected_state, score_v0
+from afandem.scoring import NORMALISER_VERSION, SCORER_VERSION, Gold, prepare_gold, score_episode
 from afandem.trace import (
     RUN_FILE,
     TRACE_SCHEMA,
@@ -241,8 +241,8 @@ class Runner:
         self.prompts: dict[str, str] = {
             item.scenario.id: options.prompts.render(item.scenario) for item in self.scenarios
         }
-        self.expected: dict[str, JSONDict] = {
-            item.scenario.id: expected_state(item.scenario) for item in self.scenarios
+        self.gold: dict[str, Gold] = {
+            item.scenario.id: prepare_gold(item.scenario) for item in self.scenarios
         }
         self.stop_budget = False
         self.target_stops: dict[str, str] = {}
@@ -279,6 +279,7 @@ class Runner:
             "targets": [targets[name] for name in sorted(targets)],
             "prompt_version": self.options.prompts.version,
             "scorer_version": SCORER_VERSION,
+            "normaliser_version": NORMALISER_VERSION,
             "follow_up_rule": FOLLOW_UP_RULE,
             "budget": None if self.options.budget is None else self.options.budget.limit,
             "stopped": None,
@@ -320,10 +321,12 @@ class Runner:
     def _record(self, item: Item, episode: Episode, started: str, salt: str | None) -> TraceRecord:
         scenario = item.loaded.scenario
         target = item.run_target.target
-        scores = score_v0(scenario, episode, expected=self.expected[scenario.id])
+        gold = self.gold[scenario.id]
+        scores = score_episode(scenario, episode, gold=gold)
         return TraceRecord(
             prompt_version=self.options.prompts.version,
             scorer_version=SCORER_VERSION,
+            normaliser_version=NORMALISER_VERSION,
             run_id=self.options.run_id,
             run_date=started[:10],
             started_at=started,
@@ -349,7 +352,7 @@ class Runner:
             tool_calls=episode.tool_calls,
             state_initial=episode.state_initial,
             state_final=episode.state_final,
-            expected_state=self.expected[scenario.id],
+            expected_state=gold.expected,
             usage=episode.usage,
             turns=episode.turns,
             follow_up_rule=episode.follow_up_rule,

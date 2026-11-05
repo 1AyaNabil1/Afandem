@@ -3,7 +3,7 @@
   "notes": [
     "weekdays: the spec's Egyptian/MSA spellings and Arabizi forms; English names are the slot values themselves.",
     "arabizi_articles: an Arabizi weekday stem counts only after one of these (bare «7ad» is «حد», someone). el = house article; al/l/ll = variant (spec); lel = «لل» and bel = «بال» as in the spec examples.",
-    "relative_days: days after `now`; «بكرة»/bokra/tomorrow and the MSA «غداً»/«الغد» are +1, «بعد بكرة»/ba3d bokra +2. A +1 form preceded by a blocker («بعد», ba3d, after) does not count.",
+    "relative_days: days after `now`; «بكرة»/bokra/tomorrow and the MSA «غداً»/«الغد» are +1, «بعد بكرة»/ba3d bokra, the MSA «بعد غد»/«بعد الغد» and 'the day after tomorrow' +2 (the MSA and English +2 forms were added 5 Nov 2026 by the build agent: a known gap). A +1 form preceded by a blocker («بعد», ba3d, after) does not count.",
     "months: standard Gregorian month names (Egyptian spellings, English names and abbreviations). NOT quoted from the spec beyond «نوفمبر» and 'Nov'; review and edit freely.",
     "day_words: «يوم ٨» (spec, digits_mixed) gives the day of month without the month."
   ],
@@ -19,7 +19,7 @@
   "arabizi_articles": ["el", "al", "l", "ll", "lel", "bel"],
   "relative_days": {
     "1": ["بكرة", "bokra", "tomorrow", "غداً", "الغد"],
-    "2": ["بعد بكرة", "ba3d bokra"]
+    "2": ["بعد بكرة", "ba3d bokra", "بعد غد", "بعد الغد", "the day after tomorrow"]
   },
   "relative_day_blockers": ["بعد", "ba3d", "after"],
   "day_words": ["يوم"],

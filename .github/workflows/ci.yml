@@ -198,6 +198,11 @@ jobs:
         run: >
           uv run afandem run --fake --scenarios tests/fixtures/smoke
           --runs-dir "$RUNNER_TEMP/afandem-runs" --run-id smoke
+      - name: Re-score from the traces and write the descriptive report (offline)
+        run: |
+          uv run afandem score "$RUNNER_TEMP/afandem-runs/smoke" --scenarios tests/fixtures/smoke
+          uv run afandem report "$RUNNER_TEMP/afandem-runs/smoke" --scenarios tests/fixtures/smoke \
+            --results-dir "$RUNNER_TEMP/afandem-results"
       - name: Run summary
         run: |
           {
@@ -212,7 +217,9 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: smoke-run
-          path: ${{ runner.temp }}/afandem-runs/smoke/
+          path: |
+            ${{ runner.temp }}/afandem-runs/smoke/
+            ${{ runner.temp }}/afandem-results/smoke/
           retention-days: 14
 
   security:

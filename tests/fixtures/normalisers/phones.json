@@ -1,0 +1,81 @@
+{
+  "source": "docs/harness-spec.md §8 (the five Egyptian forms; anything outside ^\\+201[0125]\\d{8}$ flagged) and §12 (a 10-digit landline rejected)",
+  "cases": [
+    {
+      "input": "+201012345678",
+      "e164": "+201012345678",
+      "flags": []
+    },
+    {
+      "input": "01012345678",
+      "e164": "+201012345678",
+      "flags": [
+        "not_e164"
+      ]
+    },
+    {
+      "input": "+20 10 1234 5678",
+      "e164": "+201012345678",
+      "flags": [
+        "not_e164"
+      ]
+    },
+    {
+      "input": "0020 10 1234 5678",
+      "e164": "+201012345678",
+      "flags": [
+        "not_e164"
+      ]
+    },
+    {
+      "input": "20 1012345678",
+      "e164": "+201012345678",
+      "flags": [
+        "not_e164"
+      ]
+    },
+    {
+      "input": "010-1234-5678",
+      "e164": "+201012345678",
+      "flags": [
+        "not_e164"
+      ]
+    },
+    {
+      "input": "٠١٠١٢٣٤٥٦٧٨",
+      "e164": "+201012345678",
+      "flags": [
+        "non_ascii_digits",
+        "not_e164"
+      ]
+    },
+    {
+      "input": "01500001414",
+      "e164": "+201500001414",
+      "flags": [
+        "not_e164"
+      ]
+    },
+    {
+      "input": "0223456789",
+      "e164": null,
+      "flags": [
+        "not_e164_mobile"
+      ]
+    },
+    {
+      "input": "0101234567",
+      "e164": null,
+      "flags": [
+        "not_e164_mobile"
+      ]
+    },
+    {
+      "input": "01312345678",
+      "e164": null,
+      "flags": [
+        "not_e164_mobile"
+      ]
+    }
+  ]
+}

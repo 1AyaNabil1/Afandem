@@ -1,0 +1,193 @@
+{
+  "source": "docs/harness-spec.md §8 (Arabic folding, Latin casefold) and dataset-spec §1 (answer_must_contain forms); names are the spec's synthetic examples",
+  "cases": [
+    {
+      "text": "عبد الرحمن",
+      "form": "عبدالرحمن",
+      "match": true
+    },
+    {
+      "text": "منى محمود",
+      "form": "مني محمود",
+      "match": true
+    },
+    {
+      "text": "هبة السيد",
+      "form": "هبه السيد",
+      "match": true
+    },
+    {
+      "text": "أحمد",
+      "form": "احمد",
+      "match": true
+    },
+    {
+      "text": "‏مُنى‏",
+      "form": "منى",
+      "match": true
+    },
+    {
+      "text": "**د. هبة السيد**",
+      "form": "هبة السيد",
+      "match": true
+    },
+    {
+      "text": "للدكتورة هبة السيد",
+      "form": "الدكتورة هبة السيد",
+      "match": true
+    },
+    {
+      "text": "والدكتورة هبة",
+      "form": "الدكتورة هبة",
+      "match": true
+    },
+    {
+      "text": "Dr. Heba El-Sayed",
+      "form": "Dr. Heba El Sayed",
+      "match": true
+    },
+    {
+      "text": "DR HEBA ELSAYED",
+      "form": "Dr. Heba El Sayed",
+      "match": true
+    },
+    {
+      "text": "Mona Mahmood",
+      "form": "Mona Mahmoud",
+      "match": true
+    },
+    {
+      "text": "Mohammed",
+      "form": "Mohamed",
+      "match": true
+    },
+    {
+      "text": "Dr. Heba",
+      "form": "Dr. Heba El Sayed",
+      "match": false
+    },
+    {
+      "text": "هبة",
+      "form": "هبة السيد",
+      "match": false
+    },
+    {
+      "text": "Hebat",
+      "form": "Heba",
+      "match": false
+    },
+    {
+      "text": "السيدة",
+      "form": "السيد",
+      "match": false
+    }
+  ],
+  "answers": [
+    {
+      "text": "[reply] 1,250",
+      "value": 1250,
+      "forms": [],
+      "match": true
+    },
+    {
+      "text": "[reply] ١٢٥٠",
+      "value": "1250",
+      "forms": [],
+      "match": true
+    },
+    {
+      "text": "[reply] ألف وربع",
+      "value": 1250,
+      "forms": [],
+      "match": true
+    },
+    {
+      "text": "[reply] 125",
+      "value": 1250,
+      "forms": [],
+      "match": false
+    },
+    {
+      "text": "[reply] 12500",
+      "value": 1250,
+      "forms": [],
+      "match": false
+    },
+    {
+      "text": "[reply] ٥/١١",
+      "value": "2026-11-05",
+      "forms": [],
+      "match": true
+    },
+    {
+      "text": "[reply] بكرة",
+      "value": "2026-11-05",
+      "forms": [],
+      "match": true
+    },
+    {
+      "text": "[reply] 6/11",
+      "value": "2026-11-05",
+      "forms": [],
+      "match": false
+    },
+    {
+      "text": "[reply] الساعة تلاتة ونص",
+      "value": "15:30",
+      "forms": [],
+      "match": true
+    },
+    {
+      "text": "[reply] 01000000017",
+      "value": "+201000000017",
+      "forms": [],
+      "match": true
+    },
+    {
+      "text": "[reply] Dr. Heba El-Sayed",
+      "value": "هبة السيد",
+      "forms": [
+        "Dr. Heba El Sayed"
+      ],
+      "match": true
+    },
+    {
+      "text": "[reply] heba elsayed",
+      "value": "هبة السيد",
+      "forms": [
+        "Heba El Sayed"
+      ],
+      "match": true
+    },
+    {
+      "text": "[reply] Dr. Heba",
+      "value": "هبة السيد",
+      "forms": [
+        "Heba El Sayed"
+      ],
+      "match": false
+    },
+    {
+      "text": "[reply] د. هبه السيد",
+      "value": "هبة السيد",
+      "forms": [],
+      "match": true
+    },
+    {
+      "text": "[reply] ألف ومية",
+      "value": 1250,
+      "forms": [
+        "ألف وربع"
+      ],
+      "match": false
+    },
+    {
+      "text": "[reply] alf w rob3",
+      "value": 1250,
+      "forms": [
+        "alf w rob3"
+      ],
+      "match": true
+    }
+  ]
+}

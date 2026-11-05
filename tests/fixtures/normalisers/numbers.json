@@ -1,0 +1,69 @@
+{
+  "source": "docs/dataset-spec.md §3 (number_words_money: separators, 2k, number words)",
+  "cases": [
+    {
+      "input": "1250",
+      "value": 1250
+    },
+    {
+      "input": "1,250",
+      "value": 1250
+    },
+    {
+      "input": "١٬٢٥٠",
+      "value": 1250
+    },
+    {
+      "input": "١٢٥٠",
+      "value": 1250
+    },
+    {
+      "input": "1.500",
+      "value": 1500
+    },
+    {
+      "input": "12.5",
+      "value": 12.5
+    },
+    {
+      "input": "٣٫٥",
+      "value": 3.5
+    },
+    {
+      "input": "2k",
+      "value": 2000
+    },
+    {
+      "input": "2 k",
+      "value": 2
+    },
+    {
+      "input": "ألف وربع",
+      "value": 1250
+    },
+    {
+      "input": "ألف ونص",
+      "value": 1500
+    },
+    {
+      "input": "تلتميت وخمسين",
+      "value": 350
+    },
+    {
+      "input": "تلتميت",
+      "value": 300
+    },
+    {
+      "input": "alf w rob3",
+      "value": 1250
+    },
+    {
+      "input": "one thousand two hundred and fifty",
+      "value": 1250
+    },
+    {
+      "input": "<no number here>",
+      "value": null
+    }
+  ]
+}

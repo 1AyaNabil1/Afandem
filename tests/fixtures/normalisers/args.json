@@ -1,0 +1,125 @@
+{
+  "source": "docs/harness-spec.md §8 (argument accuracy after normalisation, acceptable-value lists)",
+  "cases": [
+    {
+      "field": "date",
+      "actual": "2026-11-08",
+      "wanted": "2026-11-08",
+      "match": true
+    },
+    {
+      "field": "date",
+      "actual": "2026-11-09",
+      "wanted": "2026-11-08",
+      "match": false
+    },
+    {
+      "field": "date",
+      "actual": "2026-11-08",
+      "wanted": [
+        "2026-11-07",
+        "2026-11-08"
+      ],
+      "match": true
+    },
+    {
+      "field": "time",
+      "actual": "9:00",
+      "wanted": "09:00",
+      "match": true
+    },
+    {
+      "field": "time",
+      "actual": "17:00",
+      "wanted": [
+        "16:30",
+        "17:00"
+      ],
+      "match": true
+    },
+    {
+      "field": "time",
+      "actual": "17:30",
+      "wanted": [
+        "16:30",
+        "17:00"
+      ],
+      "match": false
+    },
+    {
+      "field": "phone",
+      "actual": "010 0000 0017",
+      "wanted": "+201000000017",
+      "match": true
+    },
+    {
+      "field": "phone",
+      "actual": "٠١٠٠٠٠٠٠٠١٧",
+      "wanted": "+201000000017",
+      "match": true
+    },
+    {
+      "field": "amount_egp",
+      "actual": 500,
+      "wanted": 500,
+      "match": true
+    },
+    {
+      "field": "amount_egp",
+      "actual": "1,500",
+      "wanted": 1500,
+      "match": true
+    },
+    {
+      "field": "amount_egp",
+      "actual": 501,
+      "wanted": 500,
+      "match": false
+    },
+    {
+      "field": "doctor_id",
+      "actual": "d_01",
+      "wanted": "d_01",
+      "match": true
+    },
+    {
+      "field": "doctor_id",
+      "actual": "D_01",
+      "wanted": "d_01",
+      "match": false
+    },
+    {
+      "field": "appointment_id",
+      "actual": "81",
+      "wanted": "a_81",
+      "match": false
+    },
+    {
+      "field": "visit_type",
+      "actual": "consultation",
+      "wanted": [
+        "consultation",
+        "follow_up"
+      ],
+      "match": true
+    },
+    {
+      "field": "name",
+      "actual": "منى محمود",
+      "wanted": "مني محمود",
+      "match": true
+    },
+    {
+      "field": "card_last4",
+      "actual": "٤٨٢١",
+      "wanted": "4821",
+      "match": true
+    },
+    {
+      "field": "flag",
+      "actual": true,
+      "wanted": true,
+      "match": true
+    }
+  ]
+}

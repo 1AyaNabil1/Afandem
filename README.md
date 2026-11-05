@@ -30,7 +30,7 @@ The name is what an Egyptian service agent says to take your request — and wha
 
 **Phase 1 — pilot (November 2026).**
 
-- **The harness works end to end:** deterministic clinic and banking sandboxes with a fixed clock, the agent loop, an OpenAI-compatible provider for the free routes, a response cache, full traces, and `afandem run | show | summary`. CI runs it against an offline fake model on every push ([`docs/ci.md`](docs/ci.md)).
+- **The harness works end to end:** deterministic clinic and banking sandboxes with a fixed clock, the agent loop, an OpenAI-compatible provider for the free routes, a response cache, full traces, programmatic scoring (end state, arguments, validity, reply language) with `afandem score`, a descriptive `afandem report`, and `afandem run | show | summary`. CI runs it against an offline fake model on every push ([`docs/ci.md`](docs/ci.md)).
 - **The first pilot scenarios are assistant drafts awaiting the author's review.** Their provenance says so, `afandem data lint` reports them as errors, and none enters the measured set until the author rewrites or approves it.
 - **No results yet.**
 
@@ -40,6 +40,8 @@ The design is in [`docs/plan.md`](docs/plan.md), with the [dataset](docs/dataset
 uv sync
 uv run afandem run --fake --scenarios tests/fixtures/smoke --runs-dir runs   # offline, no keys needed
 uv run afandem summary runs/<run-id>                                         # the run id printed above
+uv run afandem score runs/<run-id> --scenarios tests/fixtures/smoke           # re-score offline
+uv run afandem report runs/<run-id> --scenarios tests/fixtures/smoke          # results/<run-id>/
 uv run pytest
 ```
 

@@ -280,7 +280,7 @@ def test_summary_table(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> No
     header = [cell.strip() for cell in lines[1].split("|")]
     assert header == ["target", "en", "msa", "egy", "arabizi", "cs", "cs_latin", "unscored"]
     row = [cell.strip() for cell in lines[2].split("|")]
-    assert row == ["fake", "9/9", "9/9", "7/8", "9/9", "9/9", "9/9", "1"]
+    assert row == ["fake", "9/9", "9/9", "7/9", "9/9", "9/9", "9/9", "0"]  # blocked = failure
 
 
 def test_data_lint_still_works(capsys: pytest.CaptureFixture[str]) -> None:

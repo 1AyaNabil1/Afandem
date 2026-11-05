@@ -1,0 +1,64 @@
+{
+  "source": "docs/dataset-spec.md §3 (time_colloquial: periods and minute words) and docs/harness-spec.md §8 (the time lexicon)",
+  "notes": [
+    "A linguistic resource for the normaliser, not benchmark text. Entries are folded before matching (Arabic folding, ASCII digits, casefold), so «تلاتة» and «تلاته» are one entry.",
+    "hours: the clock-hour words 1-12 in Egyptian (cardinals), MSA (feminine ordinals after «الساعة»), Arabizi (house spellings) and English. An hour word only counts as a time next to «الساعة»/'at', a minute word or a period word, so «اتنين» alone is never a time.",
+    "minutes_after: minute words that follow the hour (spec table: «وخمسة» :05 ... «إلا خمسة» :55); a negative value counts back from the hour («خمسة إلا ربع» = 4:45). Written with and without the space after «و».",
+    "minutes_before: English minute phrases that precede the hour ('half past six' = 6:30, 'quarter to five' = 4:45).",
+    "periods: the spec's windows («الصبح» 06-12, «الضهر» 12-15, «بعد الضهر» 15-17, «العصر» 15:30-17:30, «المغرب» about 18, «بليل/بالليل/العشا» 19-24) plus the a.m./p.m. markers; `shift` decides the 24-hour clock (am: as written; noon: 12 stays 12, 1-3 add 12; pm: add 12 below 12). The single letters «ص»/«م» count only right after a time ('5:00 م').",
+    "markers: words that announce a clock time before a bare hour («الساعة ٥», 'at 5', el sa3a 5).",
+    "Without a period the hour is resolved from the opening hours when given (the policy block states them): the reading that falls inside the hours wins, the written one if both or neither do."
+  ],
+  "hours": {
+    "1": ["واحدة", "الواحدة", "wa7da", "one"],
+    "2": ["اتنين", "اثنين", "الثانية", "etnein", "etneen", "itnein", "two"],
+    "3": ["تلاتة", "ثلاثة", "الثالثة", "talata", "three"],
+    "4": ["أربعة", "اربعة", "الرابعة", "arba3a", "arb3a", "four"],
+    "5": ["خمسة", "الخامسة", "5amsa", "khamsa", "five"],
+    "6": ["ستة", "السادسة", "setta", "sitta", "six"],
+    "7": ["سبعة", "السابعة", "sab3a", "seven"],
+    "8": ["تمانية", "ثمانية", "الثامنة", "tamanya", "tamania", "eight"],
+    "9": ["تسعة", "التاسعة", "tes3a", "tis3a", "nine"],
+    "10": ["عشرة", "العاشرة", "3ashara", "ten"],
+    "11": ["حداشر", "الحادية عشرة", "7edashar", "hedashar", "eleven"],
+    "12": ["اتناشر", "الثانية عشرة", "etnashar", "itnashar", "twelve"]
+  },
+  "minutes_after": {
+    "وخمسة": 5, "و خمسة": 5, "w 5amsa": 5,
+    "وعشرة": 10, "و عشرة": 10, "w 3ashara": 10,
+    "وربع": 15, "و ربع": 15, "والربع": 15, "w rob3": 15, "we rob3": 15,
+    "وتلت": 20, "و تلت": 20, "والثلث": 20, "w telt": 20, "we telt": 20,
+    "ونص إلا خمسة": 25, "و نص إلا خمسة": 25, "w nos ella 5amsa": 25,
+    "ونص": 30, "و نص": 30, "والنصف": 30, "w nos": 30, "we nos": 30, "wnos": 30,
+    "ونص وخمسة": 35, "و نص و خمسة": 35, "w nos w 5amsa": 35,
+    "إلا تلت": -20, "الا الثلث": -20, "إلا ثلثا": -20, "ella telt": -20, "ela telt": -20,
+    "إلا ربع": -15, "إلا الربع": -15, "إلا ربعا": -15, "ella rob3": -15, "ela rob3": -15, "illa rob3": -15,
+    "إلا عشرة": -10, "ella 3ashara": -10,
+    "إلا خمسة": -5, "ella 5amsa": -5
+  },
+  "minutes_before": {
+    "five past": 5,
+    "ten past": 10,
+    "quarter past": 15,
+    "a quarter past": 15,
+    "twenty past": 20,
+    "half past": 30,
+    "twenty to": -20,
+    "quarter to": -15,
+    "a quarter to": -15,
+    "ten to": -10,
+    "five to": -5
+  },
+  "periods": [
+    {"forms": ["الصبح", "صباحا", "a.m.", "am", "in the morning", "el sob7", "sob7"], "shift": "am", "window": ["06:00", "12:00"]},
+    {"forms": ["الضهر", "الظهر", "ظهرا", "noon", "el dohr", "dohr"], "shift": "noon", "window": ["12:00", "15:00"]},
+    {"forms": ["بعد الضهر", "بعد الظهر", "in the afternoon", "afternoon", "ba3d el dohr"], "shift": "pm", "window": ["15:00", "17:00"]},
+    {"forms": ["العصر", "عصرا", "el 3asr"], "shift": "pm", "window": ["15:30", "17:30"]},
+    {"forms": ["المغرب", "el maghreb", "el maghrib"], "shift": "pm", "window": ["18:00", "18:00"]},
+    {"forms": ["بليل", "بالليل", "ليلا", "العشا", "at night", "in the evening", "evening", "bel leil", "bel lel"], "shift": "pm", "window": ["19:00", "24:00"]},
+    {"forms": ["مساء", "مساءا", "مسا", "p.m.", "pm"], "shift": "pm", "window": ["12:00", "24:00"]}
+  ],
+  "single_letter_periods": {"ص": "am", "م": "pm"},
+  "markers": ["الساعة", "ساعة", "at", "el sa3a", "sa3a"],
+  "oclock": ["o'clock", "oclock"]
+}

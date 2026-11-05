@@ -1,0 +1,18 @@
+{
+  "source": "docs/harness-spec.md §8 (reply language level 1: Arabizi detection by ≥ 2 lexicon hits or the digit-letter pattern) and docs/methodology.md §3.1",
+  "notes": [
+    "A linguistic resource, not benchmark text. The first eight entries are the spec's examples; the rest are frequent Egyptian Arabizi function words in the house profile, chosen not to be English words (so 'men', 'ana' and 'enta' collisions are kept to the spec's own list).",
+    "Hits are counted over distinct entries: a reply that names «El Banna» and «El Sayed» has one hit ('el'), not two, so romanised names alone never make a reply Arabizi.",
+    "unit_suffixes: a digit followed by one of these is a quantity, an ordinal or a clock time ('5pm', '2nd', '3k'), never an Arabizi letter; such tokens are dropped before the digit-letter pattern runs, like digit-only and ID-shaped tokens ('appt_0001', '+201000000017', '2026-11-08')."
+  ],
+  "arabizi_words": [
+    "3ayez", "7agz", "msh", "el", "enta", "3ashan", "kda", "eh",
+    "3ayza", "3ayzin", "mesh", "mish", "keda", "leh", "ezay", "ezzay", "fein", "fen", "emta", "delwa2ty", "dlw2ty",
+    "bokra", "ba3d", "aywa", "la2", "tamam", "mashy", "yalla", "kaman", "lessa", "5alas", "khalas", "3ala", "ma3ad",
+    "me3ad", "momken", "bta3", "beta3", "betaa3", "mafeesh", "mafish", "fe", "fi", "ya3ni", "enty", "enti", "howa",
+    "heya", "e7na", "ento", "da", "di", "dah", "deh", "elly", "eli", "3and", "3andak", "3andek", "3ndk", "awy", "2awy",
+    "shokran", "ahlan", "salam", "lw", "sa3a", "dakatra", "doktora", "7adretak", "7adretek", "inshallah", "insha2allah"
+  ],
+  "min_word_hits": 2,
+  "unit_suffixes": ["st", "nd", "rd", "th", "am", "pm", "h", "hr", "hrs", "k", "m", "min", "mins", "egp", "le", "kg", "km", "x", "d"]
+}

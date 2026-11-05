@@ -1,0 +1,238 @@
+{
+  "source": "docs/dataset-spec.md §3 (time_colloquial: periods, minute words); opening hours from the clinic policy block",
+  "cases": [
+    {
+      "input": "15:30",
+      "hours": null,
+      "time": "15:30"
+    },
+    {
+      "input": "9:00",
+      "hours": null,
+      "time": "09:00"
+    },
+    {
+      "input": "٥:٠٠ م",
+      "hours": null,
+      "time": "17:00"
+    },
+    {
+      "input": "6:30 pm",
+      "hours": null,
+      "time": "18:30"
+    },
+    {
+      "input": "5pm",
+      "hours": null,
+      "time": "17:00"
+    },
+    {
+      "input": "12:30 ظهراً",
+      "hours": null,
+      "time": "12:30"
+    },
+    {
+      "input": "الساعة ٥ العصر",
+      "hours": null,
+      "time": "17:00"
+    },
+    {
+      "input": "تلاتة ونص",
+      "hours": null,
+      "time": "03:30"
+    },
+    {
+      "input": "تلاتة ونص",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "15:30"
+    },
+    {
+      "input": "تلاتة ونص العصر",
+      "hours": null,
+      "time": "15:30"
+    },
+    {
+      "input": "خمسة إلا ربع",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "16:45"
+    },
+    {
+      "input": "سبعة إلا تلت بليل",
+      "hours": null,
+      "time": "18:40"
+    },
+    {
+      "input": "اتنين وربع بعد الضهر",
+      "hours": null,
+      "time": "14:15"
+    },
+    {
+      "input": "الساعة تلاتة",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "15:00"
+    },
+    {
+      "input": "الساعة تسعة الصبح",
+      "hours": null,
+      "time": "09:00"
+    },
+    {
+      "input": "الساعة الثالثة والنصف",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "15:30"
+    },
+    {
+      "input": "talata w nos",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "15:30"
+    },
+    {
+      "input": "5amsa ella rob3",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "16:45"
+    },
+    {
+      "input": "half past six",
+      "hours": null,
+      "time": "06:30"
+    },
+    {
+      "input": "half past six in the evening",
+      "hours": null,
+      "time": "18:30"
+    },
+    {
+      "input": "quarter to five",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "16:45"
+    },
+    {
+      "input": "at 5",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "17:00"
+    },
+    {
+      "input": "five o'clock",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "17:00"
+    },
+    {
+      "input": "10:00",
+      "hours": [
+        [
+          "10:00",
+          "22:00"
+        ]
+      ],
+      "time": "10:00"
+    },
+    {
+      "input": "9:00",
+      "hours": [
+        [
+          "21:00",
+          "01:00"
+        ]
+      ],
+      "time": "21:00"
+    },
+    {
+      "input": "اتنين",
+      "hours": null,
+      "time": null
+    },
+    {
+      "input": "خمسة جنيه",
+      "hours": null,
+      "time": null
+    },
+    {
+      "input": "بعد الضهر",
+      "hours": null,
+      "time": null
+    }
+  ],
+  "windows": [
+    {
+      "input": "بعد الضهر",
+      "window": [
+        "15:00",
+        "17:00"
+      ]
+    },
+    {
+      "input": "العصر",
+      "window": [
+        "15:30",
+        "17:30"
+      ]
+    },
+    {
+      "input": "بليل",
+      "window": [
+        "19:00",
+        "24:00"
+      ]
+    },
+    {
+      "input": "الصبح",
+      "window": [
+        "06:00",
+        "12:00"
+      ]
+    },
+    {
+      "input": "الساعة ٥ العصر",
+      "window": null
+    },
+    {
+      "input": "<no period>",
+      "window": null
+    }
+  ]
+}

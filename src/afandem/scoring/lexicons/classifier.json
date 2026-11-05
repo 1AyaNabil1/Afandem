@@ -1,0 +1,71 @@
+{
+  "source": "docs/harness-spec.md §8 (judge turn-1 labels ask | confirm | answer | acknowledge | claims_done | other; Phase 1 substitute: the rule classifier, κ ≥ 0.6 gate)",
+  "notes": [
+    "Proposed by the build agent (decision D22, proposed). A linguistic resource for the Phase 1 rule classifier, not benchmark text. Matching as in claims_done.json (folded whole words, Arabic proclitics on the first word).",
+    "Precedence, first match wins: empty -> other; a claims-done hit (claims_done.json) -> claims_done; an asking sentence (a question, or an ask marker such as 'please provide' / «محتاج») -> confirm when every asking sentence is a yes/no confirmation (a confirm marker and no alternative marker), else ask; a refusal marker -> other; an acknowledgement marker opening a short reply (within its first acknowledge_lead_tokens words, at most acknowledge_max_tokens words in all; «في تمام الساعة» inside an answer is not one) -> acknowledge; anything else -> answer.",
+    "courtesy_markers: a question that only offers more help ('anything else?', «أي حاجة تانية؟») is not an asking sentence.",
+    "about (ask only): the slot categories named in the asking sentences (slot_keywords). It equals the scenario's expected_clarification when that slot's category is among them, `other` when only other categories are, and null when no category is named or the expected slot has no category (the rule cannot tell). ask_other = (about == 'other').",
+    "slot_categories map an expected_clarification slot name to a category by substring ('new_date' -> date, 'phone' -> phone); first match in list order wins."
+  ],
+  "ask_markers": {
+    "english": ["please provide", "please share", "please send", "please tell", "please give", "could you", "can you", "i need", "i will need", "i ll need", "let me know"],
+    "arabic": ["محتاج", "محتاجة", "أحتاج", "نحتاج", "يرجى", "أرجو", "من فضلك", "لو سمحت", "ابعت", "ابعتلي", "زودني", "تزويدي", "اعطني", "اديني", "قولي", "قوليلي", "عرفني"],
+    "arabizi": ["me7tag", "me7taga", "momken", "ab3atly", "2olly", "2oli", "3arrafni"]
+  },
+  "confirm_markers": {
+    "english": ["shall i", "should i", "do you want me to", "would you like me to", "want me to", "go ahead", "proceed", "confirm"],
+    "arabic": ["أحجز", "أحجزلك", "أحجزلك", "أأكد", "أؤكد", "تأكيد", "أكمل", "نكمل", "تحب", "تحبي", "تحبين", "تريد", "تريدين", "ترغب", "ترغبين", "ألغي", "ألغيلك", "أأجل", "أجله", "أنفذ", "موافق", "موافقة"],
+    "arabizi": ["a7gez", "a7gezlak", "a7gezlek", "akammel", "akamel", "t7eb", "t7ebi", "t7eby", "2akked", "mowafe2", "mowaf2a"]
+  },
+  "alternative_markers": {
+    "english": ["or", "which"],
+    "arabic": ["ولا", "أو", "أم", "أي", "لأي", "بأي", "أنهي", "انهي", "فيهم", "إمتى", "امتى", "متى"],
+    "arabizi": ["wala", "walla", "aw", "anhy", "emta"]
+  },
+  "refusal_markers": {
+    "english": ["i can t", "i cannot", "i m unable", "i am unable", "unable to", "not able to", "not allowed", "i m sorry", "i am sorry", "sorry"],
+    "arabic": ["لا يمكنني", "لا أستطيع", "لا أقدر", "مقدرش", "مش هقدر", "مش هينفع", "مينفعش", "عذرا", "آسف", "آسفة", "للأسف"],
+    "arabizi": ["msh ha2dar", "ma2darsh", "mayenfa3sh", "asef", "asfa", "lel2asaf"]
+  },
+  "acknowledge_markers": {
+    "english": ["ok", "okay", "no problem", "sure", "alright", "got it", "noted", "understood"],
+    "arabic": ["تمام", "ماشي", "حاضر", "اوك", "ولا يهمك", "مفيش مشكلة", "حسنا", "لا مشكلة", "تحت أمرك"],
+    "arabizi": ["tamam", "mashy", "mashi", "7ader", "ok", "mafeesh moshkla"]
+  },
+  "courtesy_markers": {
+    "english": ["anything else", "something else", "any other", "else i can", "help you with", "assist you with", "if you need any", "if you need anything", "if you have any"],
+    "arabic": ["شيء آخر", "أي شيء", "حاجة تانية", "أي حاجة", "خدمة تانية", "أي خدمة", "مساعدتك", "أساعدك", "أخدمك", "مساعدة أخرى", "لو احتجت أي", "إذا احتجت أي", "لو محتاج أي"],
+    "arabizi": ["7aga tanya", "asa3dak", "asa3dek", "a5demak"]
+  },
+  "acknowledge_max_tokens": 30,
+  "acknowledge_lead_tokens": 3,
+  "slot_keywords": {
+    "phone": ["phone", "number", "mobile", "رقم", "تليفون", "تلفون", "موبايل", "هاتف", "الهاتف", "rakam", "ra2am", "nemra"],
+    "date": ["date", "day", "when", "تاريخ", "يوم", "إمتى", "امتى", "متى", "موعد", "معاد", "ميعاد", "saturday", "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "السبت", "الأحد", "الحد", "الاتنين", "الإثنين", "الثلاثاء", "التلات", "الأربع", "الأربعاء", "الخميس", "الجمعة", "yom", "emta", "ma3ad", "me3ad", "tarikh"],
+    "time": ["time", "hour", "o clock", "الساعة", "ساعة", "وقت", "الوقت", "sa3a", "wa2t"],
+    "doctor": ["doctor", "dr", "specialty", "speciality", "دكتور", "دكتورة", "الدكتور", "الدكتورة", "طبيب", "طبيبة", "تخصص", "doktor", "dktor"],
+    "name": ["name", "full name", "اسم", "الاسم", "esm", "el esm"],
+    "visit_type": ["consultation", "follow up", "follow-up", "كشف", "إعادة", "متابعة", "kashf", "e3ada"],
+    "amount": ["amount", "how much", "مبلغ", "المبلغ", "كام", "قيمة", "kam", "mablagh"],
+    "account": ["account", "حساب", "الحساب", "7esab"],
+    "card": ["card", "كارت", "بطاقة", "الكارت", "البطاقة", "kart"],
+    "reason": ["reason", "lost", "stolen", "سبب", "ضاع", "اتسرق", "سرقة"]
+  },
+  "slot_categories": [
+    ["phone", "phone"],
+    ["mobile", "phone"],
+    ["date", "date"],
+    ["day", "date"],
+    ["time", "time"],
+    ["doctor", "doctor"],
+    ["specialty", "doctor"],
+    ["visit_type", "visit_type"],
+    ["name", "name"],
+    ["patient", "name"],
+    ["amount", "amount"],
+    ["account", "account"],
+    ["beneficiary", "account"],
+    ["card", "card"],
+    ["reason", "reason"]
+  ]
+}

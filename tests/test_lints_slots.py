@@ -100,6 +100,14 @@ def test_weekday_non_forms(text: str) -> None:
         (1, "بعد بكرة", False),
         (1, "ba3d bokra", False),
         (2, "بكرة", False),
+        (2, "بعد غد", True),
+        (2, "بعد غدٍ", True),
+        (2, "بعد الغد", True),
+        (2, "the day after tomorrow", True),
+        (2, "The day after tomorrow", True),
+        (1, "بعد غد", False),
+        (1, "بعد الغد", False),
+        (1, "the day after tomorrow", False),
     ],
 )
 def test_relative_days_count_from_now(days: int, text: str, expected: bool) -> None:

@@ -1,0 +1,12 @@
+{
+  "source": "docs/dataset-spec.md §3 (number_words_money) and docs/harness-spec.md §8 (money forms)",
+  "notes": [
+    "A linguistic resource for the normaliser, not benchmark text. Number words come from src/afandem/lints/lexicons/numbers.json (one list for lints and scoring); this file holds the currency markers only.",
+    "currency: markers removed before the amount is read. The orthographic variant «جنية» reaches «جنيه» through folding (ة→ه) and needs no entry of its own; it is listed so the table is complete.",
+    "half: «جنيه ونص» adds 0.5 («١٢ جنيه ونص» = 12.5); integer EGP is the expected form, so a half is reported as a fraction.",
+    "thousands_suffix: '2k' = 2000 (spec)."
+  ],
+  "currency": ["ج.م", "جم", "ج م", "ج", "جنيه", "جنية", "جنيها", "جنيهات", "le", "l.e.", "egp", "£", "pound", "pounds", "geneh", "gneh", "genih", "gnih", "ginih"],
+  "half": ["ونص", "و نص", "w nos", "and a half"],
+  "thousands_suffix": ["k"]
+}

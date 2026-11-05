@@ -1,0 +1,63 @@
+{
+  "source": "docs/dataset-spec.md §3 (number_words_money) and docs/harness-spec.md §8 (money forms)",
+  "cases": [
+    {
+      "input": "٣٥٠ جنيه",
+      "egp": 350
+    },
+    {
+      "input": "٣٥٠ جنية",
+      "egp": 350
+    },
+    {
+      "input": "350 ج.م",
+      "egp": 350
+    },
+    {
+      "input": "350 LE",
+      "egp": 350
+    },
+    {
+      "input": "EGP 1,500",
+      "egp": 1500
+    },
+    {
+      "input": "£500",
+      "egp": 500
+    },
+    {
+      "input": "ألف وربع جنيه",
+      "egp": 1250
+    },
+    {
+      "input": "١٢ جنيه ونص",
+      "egp": 12.5
+    },
+    {
+      "input": "2k",
+      "egp": 2000
+    },
+    {
+      "input": "<no amount>",
+      "egp": null
+    }
+  ],
+  "currency": [
+    {
+      "input": "350 ج.م",
+      "has_currency": true
+    },
+    {
+      "input": "٣٥٠ جنية",
+      "has_currency": true
+    },
+    {
+      "input": "EGP 1,500",
+      "has_currency": true
+    },
+    {
+      "input": "350",
+      "has_currency": false
+    }
+  ]
+}

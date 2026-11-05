@@ -1,0 +1,40 @@
+{
+  "source": "docs/harness-spec.md §8 (digits and marks); one row per input",
+  "cases": [
+    {
+      "input": "٠١٢٣٤٥٦٧٨٩",
+      "clean": "0123456789",
+      "non_ascii_digits": true
+    },
+    {
+      "input": "۰۱۲۳۴۵۶۷۸۹",
+      "clean": "0123456789",
+      "non_ascii_digits": true
+    },
+    {
+      "input": "0123456789",
+      "clean": "0123456789",
+      "non_ascii_digits": false
+    },
+    {
+      "input": "‏٠١٠‎-1234",
+      "clean": "010-1234",
+      "non_ascii_digits": true
+    },
+    {
+      "input": "‫p_01‬",
+      "clean": "p_01",
+      "non_ascii_digits": false
+    },
+    {
+      "input": "a‌b‍c﻿",
+      "clean": "abc",
+      "non_ascii_digits": false
+    },
+    {
+      "input": "الساعة 3 يوم ٨",
+      "clean": "الساعة 3 يوم 8",
+      "non_ascii_digits": true
+    }
+  ]
+}
