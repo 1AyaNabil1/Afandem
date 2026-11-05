@@ -89,6 +89,21 @@ class GenderLexicon(_Lexicon):
     feminine: list[str]
 
 
+class TopicTerms(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    error: list[str]
+    warning: list[str]
+
+
+class HarmfulLexicon(_Lexicon):
+    topics: dict[str, TopicTerms]
+    exempt: list[str]
+    step_words: list[str]
+    sentence_min_words: int = Field(ge=1)
+    max_refuse_sentences: int = Field(ge=1)
+
+
 def _read(name: str) -> str:
     return (files("afandem.lints") / "lexicons" / f"{name}.json").read_text(encoding="utf-8")
 
@@ -131,6 +146,11 @@ def numbers() -> NumbersLexicon:
 @cache
 def gender() -> GenderLexicon:
     return GenderLexicon.model_validate_json(_read("gender"))
+
+
+@cache
+def harmful() -> HarmfulLexicon:
+    return HarmfulLexicon.model_validate_json(_read("harmful"))
 
 
 def phrases(forms: list[str], *, light: bool = False) -> list[tuple[str, Phrase]]:

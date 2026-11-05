@@ -28,3 +28,4 @@ reports/
 
 # os
 .DS_Store
+.claude/worktrees/

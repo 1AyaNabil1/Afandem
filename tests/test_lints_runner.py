@@ -73,20 +73,25 @@ def test_every_rule_reports_under_its_own_id() -> None:
         doc["texts"][name]["text"] = f"<{name} text>"
         doc["texts"][name]["confirm_yes"] = f"<{name} confirm>"
     doc["texts"]["egy"]["phenomena"].append("letter_variants")
+    doc["texts"]["en"]["text"] = "<en text> ambulance"  # a forbidden-topic lexicon term
     doc["tools"].remove("list_doctors")
     doc["slots"]["new_date_weekday"] = "Monday"
+    doc["initial_state"]["calendar"]["holidays"].append("2026-11-08")  # the gold's date
     findings = lint_scenario(Scenario.model_validate(doc))
     emitted = {f.rule for f in findings}
     assert emitted <= {*SCENARIO_RULES, "canary"}
     assert {
         "slot_reextraction",
         "slot_dates",
+        "calendar",
         "egyptian_marker",
         "cs_insertions",
         "follow_up_lexicon",
+        "harmful_text",
         "orthographic_tags",
         "noise_subset",
         "tool_set",
+        "solvability",
     } <= emitted
 
 

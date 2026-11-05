@@ -6,6 +6,7 @@ the result.
 """
 
 from afandem.lints.arabizi import check_arabizi_profile
+from afandem.lints.calendar import check_calendar
 from afandem.lints.codeswitch import check_cs_insertions
 from afandem.lints.corpus import check_corpus
 from afandem.lints.egyptian import (
@@ -17,6 +18,7 @@ from afandem.lints.egyptian import (
 )
 from afandem.lints.findings import Finding, Severity
 from afandem.lints.followup import check_follow_up_lexicon
+from afandem.lints.harmful import check_harmful_text
 from afandem.lints.runner import (
     SCENARIO_RULES,
     LintReport,
@@ -26,6 +28,7 @@ from afandem.lints.runner import (
     lint_scenario,
 )
 from afandem.lints.slots import check_slot_dates, check_slots
+from afandem.lints.solvability import check_solvability
 from afandem.lints.structure import (
     check_canary,
     check_length_ratio,
@@ -42,6 +45,7 @@ __all__ = [
     "LintReport",
     "Severity",
     "check_arabizi_profile",
+    "check_calendar",
     "check_canary",
     "check_corpus",
     "check_cs_insertions",
@@ -49,6 +53,7 @@ __all__ = [
     "check_egyptian_markers",
     "check_follow_up_lexicon",
     "check_gender",
+    "check_harmful_text",
     "check_length_ratio",
     "check_msa_isms",
     "check_msa_syntax",
@@ -58,6 +63,7 @@ __all__ = [
     "check_provenance",
     "check_slot_dates",
     "check_slots",
+    "check_solvability",
     "check_tool_set",
     "lint_document",
     "lint_path",

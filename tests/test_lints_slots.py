@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from afandem.lints import Finding
+from afandem.lints import Finding, lint_scenario
 from afandem.lints.slots import (
     ColumnView,
     check_slot_dates,
@@ -239,6 +239,8 @@ def test_slot_dates_clean_on_the_example() -> None:
         ({"days_ahead": 5}, "error", "days_ahead is 5 but the date is 4 days after now"),
         ({"new_time_weekday": "Sunday"}, "error", "which is not a date"),
         ({"other_date": "2026-11-09"}, "warning", "has no 'other_date_weekday'"),
+        ({"other_date": "2026-02-30"}, "error", "2026-02-30 is not a calendar date"),
+        ({"other_date": ["2026-11-09", "2026-13-01"]}, "error", "2026-13-01 is not a calendar"),
     ],
 )
 def test_slot_dates(change: dict[str, Any], severity: str, message: str) -> None:
@@ -247,6 +249,14 @@ def test_slot_dates(change: dict[str, Any], severity: str, message: str) -> None
     findings = check_slot_dates(Scenario.model_validate(doc))
     assert [(f.rule, f.severity) for f in findings] == [("slot_dates", severity)]
     assert message in findings[0].message
+
+
+def test_an_impossible_date_is_a_finding_not_a_crash() -> None:
+    doc = example()
+    doc["slots"]["new_date"] = "2026-02-30"
+    findings = lint_scenario(Scenario.model_validate(doc))
+    assert ("slot_dates", "error") in {(f.rule, f.severity) for f in findings}
+    assert any(f.severity == "manual" and "'new_date'" in f.message for f in findings)
 
 
 def test_slot_dates_accept_lists() -> None:

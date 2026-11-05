@@ -240,8 +240,8 @@ def _id_outcome(value: str, view: ColumnView, ctx: SlotContext) -> Outcome:
         when = record.get("date")
         if (
             isinstance(when, str)
-            and ISO_DATE_RE.match(when)
-            and date_found(dt.date.fromisoformat(when), view, ctx.now)
+            and (day := iso_date(when)) is not None
+            and date_found(day, view, ctx.now)
         ):
             return "found"
     return "manual"
@@ -251,8 +251,8 @@ def _string_check(value: str, view: ColumnView, ctx: SlotContext) -> tuple[bool,
     """(found, mechanical) for a string slot value that is not an id or the intent."""
     if match := PHONE_RE.match(value):
         return phone_found(match.group(1), view), True
-    if ISO_DATE_RE.match(value):
-        return date_found(dt.date.fromisoformat(value), view, ctx.now), True
+    if (day := iso_date(value)) is not None:
+        return date_found(day, view, ctx.now), True
     if value in WEEKDAYS:
         return weekday_found(value, view), True
     if TIME_RE.match(value):
@@ -326,27 +326,44 @@ def check_slots(scenario: Scenario) -> list[Finding]:
     return findings
 
 
-def _date_slots(slots: Mapping[str, SlotValue]) -> dict[str, list[dt.date]]:
+def iso_date(value: str) -> dt.date | None:
+    """The date a `YYYY-MM-DD` string names; None for anything else, `2026-02-30` included."""
+    if not ISO_DATE_RE.match(value):
+        return None
+    try:
+        return dt.date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def date_slots(slots: Mapping[str, SlotValue]) -> dict[str, list[dt.date]]:
     """Slots whose value is an ISO date or a list made only of ISO dates."""
     found: dict[str, list[dt.date]] = {}
     for key, value in slots.items():
         items = value if isinstance(value, list) else [value]
-        parsed = [
-            dt.date.fromisoformat(item)
-            for item in items
-            if isinstance(item, str) and ISO_DATE_RE.match(item)
-        ]
+        parsed = [day for item in items if isinstance(item, str) and (day := iso_date(item))]
         if parsed and len(parsed) == len(items):
             found[key] = parsed
     return found
 
 
 def check_slot_dates(scenario: Scenario) -> list[Finding]:
-    """`<slot>_weekday` matches its date, every resolved date has one, `days_ahead` agrees."""
+    """`<slot>_weekday` matches its date, every resolved date has one, `days_ahead` agrees, and
+    nothing shaped like a date names an impossible one."""
     rule = "slot_dates"
     slots = scenario.slots
-    dates = _date_slots(slots)
+    dates = date_slots(slots)
     findings: list[Finding] = []
+    for key, value in slots.items():
+        items = value if isinstance(value, list) else [value]
+        impossible = [
+            item
+            for item in items
+            if isinstance(item, str) and ISO_DATE_RE.match(item) and iso_date(item) is None
+        ]
+        if impossible:
+            message = f"slot {key!r}: {', '.join(impossible)} is not a calendar date"
+            findings.append(Finding(rule, message))
     for key, parsed in dates.items():
         weekday_key = key + WEEKDAY_SUFFIX
         names: list[str] = [WEEKDAYS[day.weekday()] for day in parsed]

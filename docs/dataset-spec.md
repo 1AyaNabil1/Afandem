@@ -171,6 +171,8 @@ Notes on the example. The texts are the audit-corrected illustrations; every rea
 | phenomenon_realised | every cultural tag has a value in all six columns | all |
 | solvability (CI) | a discovering oracle reaches the expected state from the user text and tool *results* (ids through `list_doctors`/`find_patient`/`list_beneficiaries`, never `expected`) | scenario |
 
+The solvability check also runs in `afandem data lint`, on `inform` items too: their answer must be in a tool result. To find a banking beneficiary, the oracle reads the slot `phone` when the text gives a phone; otherwise it uses the name of the beneficiary record for `to_account_id`. Severities and the other judgement calls behind the calendar, harmful-text and solvability lints are in [decision D25](decisions.md).
+
 ## 3. Phenomena
 
 Tags are scoped **cultural** (scenario-level; enters a per-tag comparison only when realised in all six texts) or **orthographic** (per column). Floors: the **six core cultural tags** (*) — the three date tags (relative day, relative weekday, numeric date) **pooled as "any date" ≥ 25 with ≥ 12 each** (only clinic carries dates), and number words/money, negation-hedge-abort and third-party at **≥ 25 each**; every other tag is reported with its n. One scenario usually carries 2–3 tags. The weekday is written next to every resolved date because a 2–5-day target can land on a closed day.

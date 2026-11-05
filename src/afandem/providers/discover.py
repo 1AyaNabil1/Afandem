@@ -1,9 +1,11 @@
 """The discovering oracle: a FakeModel that never reads `expected` (docs/harness-spec.md §10).
 
-It is the CI proof that every `act`/`ask` scenario is solvable from what the user says plus the
-tool *results*: it starts from the scenario's slot table (the authored meaning of the text:
-intent, specialty, dates, times, amounts, the third party's phone) and the authenticated
-principal (stated in the policy block), and finds every record id through the read tools:
+It is the proof (tests/test_solvability.py in CI, and the `solvability` rule of
+`afandem data lint`) that every `act`, `ask` and `inform` scenario is solvable from what the user
+says plus the tool *results*: it starts from the scenario's slot table (the authored meaning of
+the text: intent, specialty, dates, times, amounts, the third party's or beneficiary's phone) and
+what the policy block states (the authenticated principal; in banking also the customer's own
+accounts and cards, decision D23), and finds every other record id through the read tools:
 
 - clinic: a third party through `find_patient` (the name and phone the text gives; the name is
   taken from the record with that phone, standing in for the name in the text, whose lookup is
@@ -12,16 +14,27 @@ principal (stated in the policy block), and finds every record id through the re
   fit, `search_slots` on the date (the named doctor breaks a tie); the earliest
   slot through `search_slots` from today; an appointment to cancel or move through
   `get_appointments` (the booked one on the slot table's appointment date, or the only one);
-- banking: the destination through `list_beneficiaries` (it must be among the customer's
-  beneficiaries or own accounts), the source account from the slot table or the customer's only
-  account.
+- banking: a beneficiary through `list_beneficiaries` with the phone the text gives (slot
+  `phone`), else with the beneficiary's name (taken, as in clinic, from the customer's
+  beneficiary record for the slot table's `to_account_id`), else from the full list (an account
+  number the text gives must be on it); a transfer to another of the customer's own accounts
+  needs no lookup. The source account is the slot table's or the customer's only account, and
+  the card to block the slot table's `card_last4` or the customer's only card.
 
-Ids in the slot table are never sent as such; they only decide whether the patient is a third
-party (a `patient_id` that is not the principal's). The oracle asks in turn 1 of an `ask` item
-and acts after the follow-up, replies without calls on every other behaviour, and gives up with
-a plain reply when a lookup does not lead to exactly one record. A scenario is solvable when the
-episode it drives scores `task_success` against the real `expected` (tests/test_solvability.py);
-the tests hand it a scenario whose `expected` is removed, so reading it would raise.
+Ids in the slot table are sent only when the policy block states them (the principal, banking's
+own accounts and cards); the others only decide whether the patient is a third party and which
+record's name stands in for the text. On an `inform` item the oracle makes the reads the slot
+table points to (clinic: `get_appointments` for a patient or an appointment, `list_doctors` for a
+specialty or a doctor, `search_slots` for the earliest slot; banking: `list_transactions`,
+`list_beneficiaries` or `get_balance` by the intent's wording, on the slot table's account or
+the only one) and answers with the read results verbatim, so the scorer finds the answer only
+if a tool returned it. It asks in turn 1 of an `ask` item and acts after the follow-up, replies
+without calls on `none`, `refuse` and `out_of_scope`, and gives up with a plain reply when a
+lookup does not lead to exactly one record.
+
+`solve` drives one offline episode with it on the scenario with `expected` removed (so reading
+it would raise) and scores the episode against the real `expected`: the scenario is solvable
+when that scores `task_success`.
 """
 
 import datetime as dt
@@ -30,6 +43,8 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Final
 
+from afandem.agent.loop import Episode, run_episode
+from afandem.agent.prompts import PromptSet
 from afandem.providers.base import (
     AssistantMsg,
     Completion,
@@ -53,6 +68,7 @@ from afandem.providers.fake import (
 from afandem.providers.wire import messages_from_wire, parse_chat_completion
 from afandem.scenarios import Scenario
 from afandem.scenarios.schema import Column
+from afandem.scoring import Scores, score_episode
 
 DISCOVER_TARGET: Final = Target(
     name="discover",
@@ -61,6 +77,17 @@ DISCOVER_TARGET: Final = Target(
     params={"max_tokens": 4096, "tool_choice": "auto"},
 )
 EARLIEST_WINDOW_DAYS: Final = 30
+TRANSACTIONS_WINDOW_DAYS: Final = 30
+REPLY_ANSWER: Final = "[fake] answer"
+PATIENT_KEYS: Final = ("patient_id", "appointment_id", "appointment_date")
+DOCTOR_KEYS: Final = ("specialty", "doctor_id", "doctor_gender")
+BANKING_READS: Final = (
+    ("beneficiar", "list_beneficiaries"),
+    ("transaction", "list_transactions"),
+    ("transfer", "list_transactions"),
+    ("statement", "list_transactions"),
+)
+"""Intent words that pick a banking read; any other inform intent reads the balance."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,6 +129,17 @@ def _records(scenario: Scenario, collection: str) -> list[JSONDict]:
     return [r for r in records if isinstance(r, dict)] if isinstance(records, list) else []
 
 
+def _pending(wanted: Sequence[Call], done: Sequence[Result]) -> Plan:
+    """The wanted calls not made yet; None once every one has been made."""
+    made = [(r.name, r.args) for r in done]
+    return [call for call in wanted if (call.name, call.args) not in made] or None
+
+
+def answer(done: Sequence[Result]) -> str:
+    """The inform reply: every read result verbatim."""
+    return f"{REPLY_ANSWER} {json.dumps([r.result for r in done], ensure_ascii=False)}"
+
+
 # ---------------------------------------------------------------- clinic
 
 
@@ -122,14 +160,18 @@ def _patient(scenario: Scenario, done: Sequence[Result]) -> str | Plan:
     return found if isinstance(found, str) else None
 
 
+def _earliest_search(scenario: Scenario) -> Call:
+    today = scenario.now.local_date
+    end = today + dt.timedelta(days=EARLIEST_WINDOW_DAYS)
+    window = {"date_from": today.isoformat(), "date_to": end.isoformat()}
+    return Call("search_slots", {"specialty": scenario.slots.get("specialty"), **window})
+
+
 def _earliest(scenario: Scenario, done: Sequence[Result]) -> tuple[str, str, str] | Plan:
     """The first free slot of the specialty from today on."""
     search = _last(done, "search_slots")
     if search is None:
-        today = scenario.now.local_date
-        end = today + dt.timedelta(days=EARLIEST_WINDOW_DAYS)
-        window = {"date_from": today.isoformat(), "date_to": end.isoformat()}
-        return [Call("search_slots", {"specialty": scenario.slots.get("specialty"), **window})]
+        return [_earliest_search(scenario)]
     free = search.result.get("slots") or []
     if not free:
         return None
@@ -233,47 +275,146 @@ def _clinic(scenario: Scenario, done: Sequence[Result]) -> Plan:
     return _move(scenario, done, patient, action)
 
 
+def _clinic_reads(scenario: Scenario, done: Sequence[Result]) -> Plan:
+    """The reads an `inform` item's slot table points to (a patient's appointments, the doctors,
+    the earliest slots), after the third party's lookup when there is one."""
+    slots = scenario.slots
+    wanted: list[Call] = []
+    if any(key in slots for key in PATIENT_KEYS):
+        patient = _patient(scenario, done)
+        if not isinstance(patient, str):
+            return patient
+        wanted.append(Call("get_appointments", {"patient_id": patient}))
+    if slots.get("earliest") or "earliest" in str(slots["intent"]):
+        wanted.append(_earliest_search(scenario))
+    if any(key in slots for key in DOCTOR_KEYS) or "doctor" in str(slots["intent"]):
+        specialty = slots.get("specialty")
+        wanted.append(Call("list_doctors", {"specialty": specialty} if specialty else {}))
+    return _pending(wanted, done)
+
+
 # ---------------------------------------------------------------- banking
 
 
-def _transfer(scenario: Scenario, done: Sequence[Result]) -> Plan:
-    slots = scenario.slots
+def _own_accounts(scenario: Scenario) -> list[str]:
+    """The customer's accounts, as the policy block lists them (D23)."""
     customer = scenario.user_identity.get("customer_id")
-    own = [a["id"] for a in _records(scenario, "accounts") if a.get("owner_id") == customer]
-    source = slots.get("from_account_id") or (own[0] if len(own) == 1 else None)
-    if source is None:
-        return None
+    accounts = _records(scenario, "accounts")
+    return [str(a["id"]) for a in accounts if a.get("owner_id") == customer]
+
+
+def _account(scenario: Scenario, *keys: str) -> str | None:
+    """The account the slot table names under the first of `keys`, else the only own one."""
+    for key in keys:
+        named = scenario.slots.get(key)
+        if isinstance(named, str):
+            return named
+    own = _own_accounts(scenario)
+    return own[0] if len(own) == 1 else None
+
+
+def _beneficiary_query(scenario: Scenario) -> JSONDict | None:
+    """What the text gives to find the beneficiary: the phone, else the name (from the customer's
+    beneficiary record for the slot table's destination); None when it gives neither."""
+    slots = scenario.slots
+    phone = slots.get("phone")
+    if isinstance(phone, str):
+        return {"phone": phone}
+    customer = scenario.user_identity.get("customer_id")
+    record = next(
+        (
+            b
+            for b in _records(scenario, "beneficiaries")
+            if b.get("owner_id") == customer and b.get("account_id") == slots.get("to_account_id")
+        ),
+        None,
+    )
+    return {"name": record["name"]} if record is not None else None
+
+
+def _destination(scenario: Scenario, done: Sequence[Result], source: str) -> str | Plan:
+    """The account to transfer to, or the lookup to make first (None: no single one found)."""
+    wanted = scenario.slots.get("to_account_id")
+    if isinstance(wanted, str) and wanted in _own_accounts(scenario):
+        return wanted
+    query = _beneficiary_query(scenario)
     listed = _last(done, "list_beneficiaries")
     if listed is None:
-        return [Call("list_beneficiaries", {"account_id": source})]
-    known = {b.get("account_id") for b in listed.result.get("beneficiaries") or []} | set(own)
-    destination = slots.get("to_account_id")
-    if destination not in known:
+        return [Call("list_beneficiaries", {"account_id": source, **(query or {})})]
+    found = [str(b.get("account_id")) for b in listed.result.get("beneficiaries") or []]
+    if query is None:
+        return wanted if isinstance(wanted, str) and wanted in found else None
+    return found[0] if len(found) == 1 else None
+
+
+def _transfer(scenario: Scenario, done: Sequence[Result]) -> Plan:
+    source = _account(scenario, "from_account_id")
+    amount = scenario.slots.get("amount_egp")
+    if source is None or not isinstance(amount, int):
         return None
-    args = {
-        "from_account_id": source,
-        "to_account_id": destination,
-        "amount_egp": slots["amount_egp"],
-    }
+    destination = _destination(scenario, done, source)
+    if not isinstance(destination, str):
+        return destination
+    args = {"from_account_id": source, "to_account_id": destination, "amount_egp": amount}
     return [Call("transfer", args)]
 
 
+def _block(scenario: Scenario, done: Sequence[Result]) -> Plan:
+    if _last(done, "block_card") is not None:
+        return None
+    own = _own_accounts(scenario)
+    cards = [str(c["last4"]) for c in _records(scenario, "cards") if c.get("account_id") in own]
+    card = scenario.slots.get("card_last4") or (cards[0] if len(cards) == 1 else None)
+    reason = scenario.slots.get("reason")
+    if card is None or reason is None:
+        return None
+    return [Call("block_card", {"card_last4": card, "reason": reason})]
+
+
 def _banking(scenario: Scenario, done: Sequence[Result]) -> Plan:
-    slots = scenario.slots
-    intent = str(slots["intent"])
+    intent = str(scenario.slots["intent"])
     if "block" in intent:
-        if _last(done, "block_card") is not None:
-            return None
-        return [Call("block_card", {"card_last4": slots["card_last4"], "reason": slots["reason"]})]
+        return _block(scenario, done)
     if "transfer" not in intent or _last(done, "transfer") is not None:
         return None
     return _transfer(scenario, done)
+
+
+def _transactions_window(scenario: Scenario) -> JSONDict:
+    """The slot table's dates (`date_from`/`date_to`, or one `date`), else the last 30 days."""
+    slots = scenario.slots
+    today = scenario.now.local_date
+    start = slots.get("date_from") or slots.get("date")
+    end = slots.get("date_to") or slots.get("date")
+    default_start = today - dt.timedelta(days=TRANSACTIONS_WINDOW_DAYS)
+    return {
+        "date_from": str(start) if start else default_start.isoformat(),
+        "date_to": str(end) if end else today.isoformat(),
+    }
+
+
+def _banking_reads(scenario: Scenario, done: Sequence[Result]) -> Plan:
+    account = _account(scenario, "account_id", "from_account_id")
+    if account is None:
+        return None
+    intent = str(scenario.slots["intent"])
+    tool = next((tool for word, tool in BANKING_READS if word in intent), "get_balance")
+    args: JSONDict = {"account_id": account}
+    if tool == "list_transactions":
+        args.update(_transactions_window(scenario))
+    return _pending([Call(tool, args)], done)
 
 
 PLANNERS: Final[dict[str, Callable[[Scenario, Sequence[Result]], Plan]]] = {
     "clinic": _clinic,
     "banking": _banking,
 }
+"""The writes of an `act` or `ask` item, one round at a time."""
+READERS: Final[dict[str, Callable[[Scenario, Sequence[Result]], Plan]]] = {
+    "clinic": _clinic_reads,
+    "banking": _banking_reads,
+}
+"""The reads of an `inform` item."""
 
 
 class DiscoveringModel(FakeModel):
@@ -292,12 +433,15 @@ class DiscoveringModel(FakeModel):
         self.requests = 0
 
     def step(self, turn: int, messages: Sequence[Message]) -> Step:
-        behaviour = self.scenario.behaviour
-        if behaviour not in ("act", "ask"):
+        scenario, done = self.scenario, results(messages)
+        if scenario.behaviour == "inform":
+            reads = READERS[scenario.domain](scenario, done)
+            return Step(calls=tuple(reads)) if reads else Step(content=answer(done))
+        if scenario.behaviour not in ("act", "ask"):
             return Step(content=REPLY_NO_ACTION)
-        if behaviour == "ask" and turn == 1:
+        if scenario.behaviour == "ask" and turn == 1:
             return Step(content=question(None))
-        plan = PLANNERS[self.scenario.domain](self.scenario, results(messages))
+        plan = PLANNERS[scenario.domain](scenario, done)
         return Step(calls=tuple(plan)) if plan else Step(content=REPLY_DONE)
 
     async def complete(self, request: Request) -> Completion:
@@ -308,4 +452,32 @@ class DiscoveringModel(FakeModel):
         return parse_chat_completion(response, latency_ms=self.override.latency_ms)
 
 
-__all__ = ["DISCOVER_TARGET", "PLANNERS", "DiscoveringModel", "Result", "results"]
+def blinded(scenario: Scenario) -> Scenario:
+    """The scenario without `expected`: any read of it by the oracle raises."""
+    return scenario.model_copy(update={"expected": None})
+
+
+async def solve(
+    scenario: Scenario, column: Column = "egy", *, model_view: Scenario | None = None
+) -> tuple[Episode, Scores]:
+    """One offline episode of the oracle on `model_view` (default: the blinded scenario), scored
+    against the real `expected`. The oracle ignores the text, so the column only tags replies."""
+    model = DiscoveringModel(model_view or blinded(scenario), column)
+    prompt = PromptSet.stub().render(scenario)
+    episode = await run_episode(
+        scenario, column, model, target=DISCOVER_TARGET, system_prompt=prompt
+    )
+    return episode, score_episode(scenario, episode)
+
+
+__all__ = [
+    "DISCOVER_TARGET",
+    "PLANNERS",
+    "READERS",
+    "DiscoveringModel",
+    "Result",
+    "answer",
+    "blinded",
+    "results",
+    "solve",
+]
