@@ -51,7 +51,7 @@ from afandem.sandbox.names import (
 from afandem.scenarios.schema import WEEKDAYS
 from afandem.scoring import lexicons
 
-NORMALISER_VERSION: Final = "1"
+NORMALISER_VERSION: Final = "2"
 
 type Number = int | float
 

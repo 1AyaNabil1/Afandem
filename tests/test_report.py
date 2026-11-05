@@ -81,7 +81,7 @@ def test_rescoring_writes_scores_jsonl_and_leaves_traces_alone(tmp_path: Path) -
     scores = read_scores(run_dir)
     assert result.items == len(scores) == 27 and result.scored == 27 and not result.changed
     line = scores["clinic-9001|egy|fake|1"]
-    assert line["scorer_version"] == SCORER_VERSION and line["normaliser_version"] == "1"
+    assert line["scorer_version"] == SCORER_VERSION and line["normaliser_version"] == "2"
     assert line["scores"]["task_success"] is False and line["scenario_changed"] is False
     trace = json.loads((run_dir / TRACES_FILE).read_text(encoding="utf-8").splitlines()[0])
     assert scores[f"{trace['scenario_id']}|{trace['column']}|fake|1"]["scores"] == trace["scores"]

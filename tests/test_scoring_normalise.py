@@ -29,7 +29,7 @@ NOW = dt.date.fromisoformat(json.loads((TABLES / "dates.json").read_text(encodin
 
 
 def test_version() -> None:
-    assert n.NORMALISER_VERSION == "1"
+    assert n.NORMALISER_VERSION == "2"
 
 
 @pytest.mark.parametrize("case", rows("digits"), ids=ids(rows("digits")))
