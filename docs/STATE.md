@@ -1,6 +1,6 @@
 # State — resume here
 
-*Rewrite this page at the end of every session.* Last updated: 2026-11-05 (late afternoon).
+*Rewrite this page at the end of every session.* Last updated: 2026-11-05 (evening).
 
 **Phase:** 1 (pilot). Sub-budgets (a), (b) and (c) built: scorer v1 (normalisers, forms matching, metrics, rule classifier), `afandem score` / `report`, golden traces and the discovering oracle (decision D22, for review). Pilot domains clinic + banking; free routes only until funded; publish the pilot at the Phase 1 exit. The repo is public and pushed (Aya cleared the IP question on 5 Nov); commits follow Conventional Commits (history reworded on 5 Nov, `prereg-v1` re-pointed before any pilot run).
 
@@ -32,6 +32,7 @@
    - private vulnerability reporting and Dependabot security updates;
    - labels `data` and `results`.
 5. Optional: a Fanar key regenerated (the old one appeared in a screenshot).
+6. Outreach (Brain note `10 — Accounts & Profiles` has every link). Done: SIGARAB (form and group) and the Cohere Labs application. OpenReview needs a **vouch** from someone with a confirmed institutional e-mail; the profile was resubmitted on 5 Nov. The pre-registration is on Zenodo (release of `prereg-v1`, doi:10.5281/zenodo.23986572; concept DOI 10.5281/zenodo.23986571; D24), and `CITATION.cff` is in the repo. The Hugging Face dataset `AyaNabil111/afandem` exists, **private**, holding only a skeleton card (no data).
 
 **Next for the build:**
 - Calibrate the claims-done lexicon and the turn-1 rule classifier against Aya's labels (κ ≥ 0.6 gate).
