@@ -20,6 +20,7 @@ from afandem.lints.egyptian import (
 )
 from afandem.lints.findings import Finding
 from afandem.lints.followup import check_follow_up_lexicon
+from afandem.lints.harmful import check_harmful_text
 from afandem.lints.slots import check_slot_dates, check_slots
 from afandem.lints.state import check_state
 from afandem.lints.structure import (
@@ -56,6 +57,7 @@ SCENARIO_RULES: Mapping[str, ScenarioRule] = {
     "cs_insertions": check_cs_insertions,
     "gender": check_gender,
     "follow_up_lexicon": check_follow_up_lexicon,
+    "harmful_text": check_harmful_text,
     "phenomenon_realised": check_phenomenon_realised,
     "orthographic_tags": check_orthographic_tags,
     "noise_subset": check_noise_subset,

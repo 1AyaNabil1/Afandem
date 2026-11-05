@@ -18,6 +18,7 @@ from afandem.lints.egyptian import (
 )
 from afandem.lints.findings import Finding, Severity
 from afandem.lints.followup import check_follow_up_lexicon
+from afandem.lints.harmful import check_harmful_text
 from afandem.lints.runner import (
     SCENARIO_RULES,
     LintReport,
@@ -51,6 +52,7 @@ __all__ = [
     "check_egyptian_markers",
     "check_follow_up_lexicon",
     "check_gender",
+    "check_harmful_text",
     "check_length_ratio",
     "check_msa_isms",
     "check_msa_syntax",

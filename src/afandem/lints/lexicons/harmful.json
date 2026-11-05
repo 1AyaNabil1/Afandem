@@ -1,0 +1,81 @@
+{
+  "source": "docs/dataset-spec.md §2 (Harmful items: intent-level only, ≤ 1 sentence of pretext, no steps; no self-harm, no violence, no life-threatening emergencies anywhere; hyperbole controls use non-emergency complaints) and §3 (hyperbole_alarming idioms)",
+  "notes": [
+    "A linguistic resource for the harmful-text lint, not benchmark text. The topic lists were drafted by the build agent on 5 Nov 2026 (decision D24); only the exempt idioms are quoted from the spec. Review and edit freely.",
+    "Matching is whole-word and clitic-aware after folding (src/afandem/lints/text.py): hamza seats, ta marbuta and alef maqsura fold, so one spelling covers «أ/ا» and «ة/ه»; an Arabic word also matches with the article. Arabic, Arabizi and English terms are checked in every column (CS-Latin carries English insertions).",
+    "Design: the non-emergency hyperbole idioms of the lexicon controls (tags hyperbole_alarming, idiom_violent) use 'X is killing me' and 'killed' verbs about a body part or a thing (the spec's «ضرسي هيموتني», «موّت الخط», 'my tooth is killing me'). So no list holds the bare 'kill/die' forms («موت», «هيموتني», «هموت», 'kill', 'killing me', 'dying'): only killing aimed at a person or at oneself («هقتله», «أقتل نفسي», 'kill him', 'kill myself'), weapons, and named emergencies are listed. The exempt phrases are masked before matching, as a second guard.",
+    "error: unambiguous terms; a hit is an error. warning: terms with an innocent reading in a clinic or bank request (a medical complaint such as bleeding gums, a name such as «سكينة», a common hyperbole built on «جلطة» or 'it's a crime'); a hit is a warning to look at.",
+    "step_words: words that announce a step-by-step sequence; checked on refuse items only (warning). Enumerated lines are found by pattern (error).",
+    "sentence_min_words / max_refuse_sentences: a refuse text holds the request plus at most one sentence of pretext, read as at most two sentences of three or more words (a name-and-phone fragment does not count); a heuristic, so a warning."
+  ],
+  "topics": {
+    "self_harm": {
+      "error": [
+        "انتحار", "انتحر", "هنتحر", "حنتحر", "ينتحر", "تنتحر", "منتحر",
+        "أقتل نفسي", "هقتل نفسي", "يقتل نفسه", "تقتل نفسها",
+        "أموت نفسي", "هموت نفسي", "أأذي نفسي", "أؤذي نفسي", "إيذاء النفس",
+        "أجرح نفسي", "هجرح نفسي", "أنهي حياتي", "هنهي حياتي", "أخلص على نفسي", "هخلص على نفسي",
+        "جرعة زائدة",
+        "ente7ar", "entehar", "ant7er", "hant7er",
+        "a2tel nafsy", "a2tel nafsi", "ha2tel nafsy", "ha2tel nafsi",
+        "amawet nafsy", "amawet nafsi", "hamawet nafsy", "hamawet nafsi",
+        "a5alas 3ala nafsy", "akhalas 3ala nafsy", "a2zy nafsy", "agra7 nafsy",
+        "suicide", "suicidal", "kill myself", "killing myself", "end my life", "take my own life",
+        "self-harm", "harm myself", "overdose"
+      ],
+      "warning": [
+        "عايز أموت", "عايزة أموت", "نفسي أموت", "جرعة زيادة",
+        "3ayez amoot", "3ayza amoot", "nefsy amoot",
+        "want to die", "wanna die", "hurt myself", "cut myself"
+      ]
+    },
+    "violence": {
+      "error": [
+        "قتل", "جريمة قتل", "هقتله", "هقتلها", "هقتلك", "هقتلهم", "أقتله", "أقتلها", "أقتلك", "حقتله",
+        "مسدس", "طبنجة", "سلاح", "أسلحة", "مطواة", "أطعنه", "هطعنه",
+        "اغتصاب", "اعتداء", "اختطاف", "قنبلة", "متفجرات", "إرهاب", "إرهابي", "ضرب نار", "عنف",
+        "a2tlo", "ha2tlo", "a2tlaha", "ha2tlaha", "a2tlak", "ha2tlak",
+        "mosaddas", "masdas", "tabanga", "selah", "matwa", "darb nar", "eghtesab", "2onbela",
+        "murder", "murdered", "kill him", "kill her", "kill them", "kill you",
+        "stab", "stabbed", "stabbing", "gun", "guns", "pistol", "rifle", "weapon", "weapons",
+        "bomb", "explosives", "terrorist", "terrorism", "rape", "raped", "kidnap", "kidnapped",
+        "assault", "assaulted", "shoot him", "shoot her", "shot him", "shot her",
+        "beat him up", "beat her up", "violence"
+      ],
+      "warning": [
+        "جريمة", "سكين", "سكينة", "طعنة", "طعن", "رشاش", "خطفوه",
+        "gareema", "sekkina", "sekina",
+        "crime", "knife", "violent"
+      ]
+    },
+    "emergency": {
+      "error": [
+        "أزمة قلبية", "ذبحة صدرية", "سكتة قلبية", "سكتة دماغية",
+        "مش قادر أتنفس", "مش قادرة أتنفس", "مش عارف أتنفس", "مش عارفة أتنفس", "مبيتنفسش", "مبتتنفسش",
+        "فقد الوعي", "فاقد الوعي", "فاقدة الوعي", "أغمى عليه", "أغمى عليها", "مغمى عليه", "مغمى عليها",
+        "إسعاف", "عربية إسعاف", "حالة طوارئ", "بيحتضر", "بتحتضر",
+        "azma 2albeya", "azma albeya", "zab7a sadreya", "sakta 2albeya", "sakta demaghya",
+        "msh 2ader atnafes", "mesh 2ader atnafes", "msh 2adra atnafes", "mesh 2adra atnafes",
+        "msh 2ader atnaffes", "mesh 2ader atnaffes", "msh 2adra atnaffes", "mesh 2adra atnaffes",
+        "oghma 3aleh", "oghma 3aleha", "es3af", "is3af",
+        "heart attack", "cardiac arrest", "can't breathe", "cannot breathe", "can not breathe",
+        "not breathing", "stopped breathing", "unconscious", "passed out", "ambulance",
+        "life-threatening"
+      ],
+      "warning": [
+        "جلطة", "نزيف", "بينزف", "بتنزف", "تسمم", "طوارئ", "غيبوبة", "العناية المركزة", "حريق", "حريقة",
+        "galta", "nazeef", "nazif", "taware2", "ghaybooba", "7areeka", "7ari2a",
+        "stroke", "bleeding", "seizure", "choking", "fainted", "poisoned", "poisoning", "coma",
+        "emergency", "intensive care"
+      ]
+    }
+  },
+  "exempt": ["ضرسي هيموتني", "موّت الخط", "هقلب الدنيا", "والله العظيم", "my tooth is killing me", "killing me"],
+  "step_words": [
+    "خطوة", "خطوات", "أولا", "ثانيا", "ثالثا",
+    "khatwa", "5atwa", "khatawat", "5atawat", "awalan", "tanyan", "talatan",
+    "step", "steps", "firstly", "secondly", "thirdly"
+  ],
+  "sentence_min_words": 3,
+  "max_refuse_sentences": 2
+}
