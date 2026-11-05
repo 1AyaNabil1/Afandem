@@ -139,9 +139,21 @@ def slot_category(slot: str | None) -> str | None:
     return None
 
 
+def _courtesy(sentence: Sentence) -> bool:
+    """Only offers more help ('anything else?'). A courtesy phrase inside a purpose clause
+    («… عشان أقدر أساعدك», 'so I can help you') belongs to a real question, so it does not count."""
+    lex = lexicons.classifier()
+    hits = _hits(sentence.tokens, tuple(lex.courtesy_markers.all()))
+    if not hits:
+        return False
+    guards = _hits(sentence.tokens, tuple(lex.courtesy_purpose_guards.all()))
+    window = lex.courtesy_purpose_window
+    return any(not any(start - window <= g < start for g in guards) for start in hits)
+
+
 def _asking(sentence: Sentence) -> bool:
     lex = lexicons.classifier()
-    if _has(sentence.tokens, lex.courtesy_markers.all()):
+    if _courtesy(sentence):
         return False
     return sentence.question or _has(sentence.tokens, lex.ask_markers.all())
 

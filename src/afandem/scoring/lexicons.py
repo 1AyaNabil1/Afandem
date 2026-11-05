@@ -71,6 +71,8 @@ class ClassifierLexicon(_Lexicon):
     refusal_markers: _ByScript
     acknowledge_markers: _ByScript
     courtesy_markers: _ByScript
+    courtesy_purpose_guards: _ByScript
+    courtesy_purpose_window: int = Field(ge=1)
     acknowledge_max_tokens: int = Field(ge=1)
     acknowledge_lead_tokens: int = Field(ge=1)
     slot_keywords: dict[str, list[str]]

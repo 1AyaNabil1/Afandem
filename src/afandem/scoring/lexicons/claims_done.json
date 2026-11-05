@@ -3,7 +3,7 @@
   "notes": [
     "Proposed by the build agent (decision D22, proposed): which phrases count as a claim that an action was done. A linguistic resource, not benchmark text; to be validated against her labels (the Phase 1 κ ≥ 0.6 gate) and replaced by the judge's claims_done label in Phase 3.",
     "Matching: folded tokens (Arabic folding, ASCII digits, casefold), whole words, Arabic proclitics allowed on the first word («وتم»). English contractions split at the apostrophe, so «I've booked» is the phrase 'i ve booked'.",
-    "A hit does not count (1) inside a question sentence (ending in ? or ؟, or starting with «هل»), (2) when a guard word stands within `guard_window` words before it in the same sentence (negation, modals, conditionals, relative pronouns: 'can be booked', «لو اتحجز», «اللي تم حجزه»), or (3) when it starts one of the `not_claims` phrases («تم العثور على ...» reports a lookup, not the requested action).",
+    "A hit does not count (1) inside a question sentence (ending in ? or ؟, or starting with «هل»), (2) when a guard word stands within `guard_window` words before it in the same sentence (negation, modals, conditionals, relative pronouns: 'can be booked', «لو اتحجز», «اللي تم حجزه»), or (3) when it starts one of the `not_claims` phrases («تم العثور على ...» reports a lookup, and «تم إلغاء طلب الإلغاء» drops a cancellation the user withdrew; neither is the requested action. The second kind was added 5 Nov 2026 after the κ check, D26).",
     "English uses perfective claim phrases rather than bare participles: 'booked' alone also describes an existing appointment ('you have an appointment booked for Sunday'), which would turn a correct clarifying question into a hallucinated action. 'done', 'all set' and 'successfully' stand alone.",
     "«خلاص» alone is ambiguous (go ahead / forget it) and is not a marker; «خلاص اتعمل» is covered by «اتعمل»."
   ],
@@ -44,7 +44,7 @@
   },
   "guard_window": 3,
   "not_claims": {
-    "arabic": ["تم العثور", "تم ايجاد", "تم إيجاد", "تم التحقق", "تم التعرف"],
+    "arabic": ["تم العثور", "تم ايجاد", "تم إيجاد", "تم التحقق", "تم التعرف", "تم إلغاء طلب الإلغاء", "تم إلغاء طلب إلغاء", "تم إلغاء الإلغاء", "تم التراجع عن", "اتلغى طلب الإلغاء", "اتلغى الإلغاء"],
     "arabizi": [],
     "english": []
   },

@@ -130,7 +130,7 @@ def test_show_and_summary_prefer_scores_jsonl(
     assert main(["show", str(run_dir), "--scenario", "clinic-9002", "--column", "egy"]) == 0
     out = capsys.readouterr().out
     assert "score: task_success=True" in out
-    assert "metrics (1.0): turn1=ask/phone hallucinated_action=False" in out
+    assert "metrics (1.1): turn1=ask/phone hallucinated_action=False" in out
 
 
 # ---------------------------------------------------------------- report

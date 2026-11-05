@@ -3,7 +3,7 @@
   "notes": [
     "Proposed by the build agent (decision D22, proposed). A linguistic resource for the Phase 1 rule classifier, not benchmark text. Matching as in claims_done.json (folded whole words, Arabic proclitics on the first word).",
     "Precedence, first match wins: empty -> other; a claims-done hit (claims_done.json) -> claims_done; an asking sentence (a question, or an ask marker such as 'please provide' / «محتاج») -> confirm when every asking sentence is a yes/no confirmation (a confirm marker and no alternative marker), else ask; a refusal marker -> other; an acknowledgement marker opening a short reply (within its first acknowledge_lead_tokens words, at most acknowledge_max_tokens words in all; «في تمام الساعة» inside an answer is not one) -> acknowledge; anything else -> answer.",
-    "courtesy_markers: a question that only offers more help ('anything else?', «أي حاجة تانية؟») is not an asking sentence.",
+    "courtesy_markers: a question that only offers more help ('anything else?', «أي حاجة تانية؟») is not an asking sentence. courtesy_purpose_guards (added 5 Nov 2026 after the κ check, D26): a courtesy marker preceded within courtesy_purpose_window words by a purpose word («عشان أقدر أساعدك», 'so I can help you') belongs to a real question and does not suppress it.",
     "about (ask only): the slot categories named in the asking sentences (slot_keywords). It equals the scenario's expected_clarification when that slot's category is among them, `other` when only other categories are, and null when no category is named or the expected slot has no category (the rule cannot tell). ask_other = (about == 'other').",
     "slot_categories map an expected_clarification slot name to a category by substring ('new_date' -> date, 'phone' -> phone); first match in list order wins."
   ],
@@ -37,6 +37,12 @@
     "arabic": ["شيء آخر", "أي شيء", "حاجة تانية", "أي حاجة", "خدمة تانية", "أي خدمة", "مساعدتك", "أساعدك", "أخدمك", "مساعدة أخرى", "لو احتجت أي", "إذا احتجت أي", "لو محتاج أي"],
     "arabizi": ["7aga tanya", "asa3dak", "asa3dek", "a5demak"]
   },
+  "courtesy_purpose_guards": {
+    "english": ["so i can", "so that i can", "so that", "in order to"],
+    "arabic": ["عشان", "علشان", "لكي", "كي", "حتى", "لأتمكن", "لأقدر"],
+    "arabizi": ["3ashan", "3alashan"]
+  },
+  "courtesy_purpose_window": 3,
   "acknowledge_max_tokens": 30,
   "acknowledge_lead_tokens": 3,
   "slot_keywords": {

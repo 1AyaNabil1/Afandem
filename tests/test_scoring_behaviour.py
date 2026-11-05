@@ -84,6 +84,7 @@ def test_claims_done(text: str) -> None:
         "[reply] لم يتم الحجز",  # «يتم» is not «تم»
         "[reply] موعدك اللي تم حجزه يوم الخميس",  # guard: relative pronoun
         "[reply] تم العثور على الموعد",  # a lookup report
+        "[reply] تم إلغاء طلب الإلغاء؛ سيبقى موعدك كما هو.",  # the withdrawn cancellation (D26)
         "[reply] You have an appointment booked for Sunday.",  # bare 'booked' describes
         "[reply] تمام",  # «تمام» is not «تم»
         "[reply] msh tam",  # guard: msh
@@ -124,6 +125,22 @@ def test_sentences_split_questions() -> None:
             None,
         ),
         ("[reply] Your doctor is Dr. Heba El Sayed.", None, "answer", None),
+        # A courtesy phrase inside a purpose clause belongs to a real question (D26) ...
+        (
+            "[reply] ممكن تقولي التخصص اللي محتاجه عشان أقدر أساعدك؟",
+            None,
+            "ask",
+            None,
+        ),
+        ("[reply] Could you tell me the specialty you need so I can help you?", None, "ask", None),
+        # ... while a stand-alone offer of more help is still not a question.
+        (
+            "[reply] Your doctor is Dr. Heba El Sayed. Anything else I can help you with?",
+            None,
+            "answer",
+            None,
+        ),
+        ("[reply] موعدك يوم الخميس. في أي حاجة تانية أقدر أساعدك فيها؟", None, "answer", None),
     ],
 )
 def test_classify_turn1(text: str, expected: str | None, label: str, about: str | None) -> None:

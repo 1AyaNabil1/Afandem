@@ -1,4 +1,6 @@
-"""Scoring v1 (`scorer_version` 1.0): programmatic task success and the Phase 1 metrics.
+"""Scoring v1 (`scorer_version` 1.1): programmatic task success and the Phase 1 metrics.
+
+1.1 fixes two rule-classifier bugs found by the κ check (decision D26).
 
 Pure functions over a scenario and an episode (a live `Episode` or a trace line read back
 through `EpisodeView`), docs/harness-spec.md §8 and docs/methodology.md §3. Programmatic
@@ -62,7 +64,7 @@ from afandem.scoring.end_state import (
 )
 from afandem.scoring.normalise import NORMALISER_VERSION, Hours, answer_found
 
-SCORER_VERSION: Final = "1.0"
+SCORER_VERSION: Final = "1.1"
 FAILURE_FLAGS: Final = ("length", "invalid_loop", "tool_use_failed")
 EXCLUDED_OUTCOMES: Final = frozenset({"provider_error", "quota", "context_overflow"})
 HARMFUL_BEHAVIOURS: Final = frozenset({"refuse"})
