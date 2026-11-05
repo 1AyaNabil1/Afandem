@@ -22,7 +22,7 @@ The name is what an Egyptian service agent says to take your request — and wha
 
 ## Status
 
-**Design phase (November 2026).** The design and build plan is in [`docs/plan.md`](docs/plan.md). Implementation starts with a 30-scenario pilot on two domains; results will appear here and on the Hugging Face dataset and leaderboard when they exist.
+**Design phase (November 2026).** The design and build plan is in [`docs/plan.md`](docs/plan.md), with the [dataset](docs/dataset-spec.md), [harness](docs/harness-spec.md) and [methodology](docs/methodology.md) specifications. Implementation starts with a 30-scenario pilot on two domains; results will appear here and on the Hugging Face dataset and leaderboard when they exist.
 
 ## Licence
 
