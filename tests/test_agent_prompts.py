@@ -51,6 +51,7 @@ def test_variables_are_machine_formats() -> None:
     assert variables["holidays"].startswith("2026-01-07,2026-01-25")
     assert variables["calendar_json"].startswith('{"closed":["Fri"]')
     assert "daily_limit_egp" not in variables
+    assert "own_accounts_json" not in variables
 
 
 def test_banking_variables_and_a_summer_offset() -> None:
@@ -58,6 +59,11 @@ def test_banking_variables_and_a_summer_offset() -> None:
     assert variables["daily_limit_egp"] == "50000"
     assert variables["identity_customer_id"] == "c_9001"
     assert "calendar_json" not in variables
+    # Own accounts and cards only (acc_9002 and acc_9003 belong to beneficiaries), no balances.
+    assert variables["own_accounts_json"] == '[{"id":"acc_9001","kind":"current"}]'
+    assert variables["own_cards_json"] == (
+        '[{"account_id":"acc_9001","last4":"9001","status":"active"}]'
+    )
     data = SMOKE["banking-9001"].model_dump(mode="json", by_alias=True)
     data["now"] = {"local": "2026-07-01T09:30:00", "tz": "Africa/Cairo", "weekday": "Wednesday"}
     summer = type(SMOKE["banking-9001"]).model_validate(data)

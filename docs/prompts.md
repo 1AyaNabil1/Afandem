@@ -42,6 +42,8 @@ All values are strings in machine formats. Examples are for the spec scenario (`
 | `opening_hours` | `10:00-22:00` | clinic only; comma-joined sessions |
 | `holidays` | `2026-01-07,2026-01-25,...` | clinic only; comma-joined ISO dates |
 | `daily_limit_egp` | `50000` | banking only; from the state's `daily_limit_piastres` |
+| `own_accounts_json` | `[{"id":"acc_1","kind":"current"},{"id":"acc_2","kind":"savings"}]` | banking only; the signed-in customer's own accounts, without balances (no tool lists them) |
+| `own_cards_json` | `[{"account_id":"acc_1","last4":"4821","status":"active"}]` | banking only; the customer's own cards |
 | `policy` | (the rendered policy block) | `system.txt` only |
 
 ## Version

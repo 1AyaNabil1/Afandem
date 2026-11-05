@@ -13,7 +13,10 @@ in `system.txt` (which must contain it). Variables are strings, all in machine f
 - identity: `identity_<key>` for each `user_identity` key, `user_identity_json`;
 - `domain`;
 - clinic (from the state): `calendar_json`, `closed_days`, `opening_hours`, `holidays`;
-- banking (from the state): `daily_limit_egp`.
+- banking (from the state): `daily_limit_egp`, `own_accounts_json` (the customer's own accounts:
+  id and kind, no balances) and `own_cards_json` (the customer's own cards: last four digits,
+  account id and status). The model has no tool that lists accounts, so this is how it learns
+  the account ids its tools take.
 
 A placeholder outside that set, or one using attribute or index access, is an error naming it.
 Literal braces in a template are written `{{` and `}}`.
@@ -101,6 +104,17 @@ def prompt_variables(scenario: Scenario) -> dict[str, str]:
         variables["holidays"] = ",".join(sorted(calendar.holidays))
     elif isinstance(state, BankingState):
         variables["daily_limit_egp"] = str(piastres_to_egp(state.daily_limit_piastres))
+        own = state.own_account_ids()
+        variables["own_accounts_json"] = canonical_json(
+            [{"id": a.id, "kind": a.kind} for a in state.accounts if a.id in own]
+        )
+        variables["own_cards_json"] = canonical_json(
+            [
+                {"last4": c.last4, "account_id": c.account_id, "status": c.status}
+                for c in state.cards
+                if c.account_id in own
+            ]
+        )
     return variables
 
 
