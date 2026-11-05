@@ -34,3 +34,12 @@ One entry per working session: date, hours, what was done, the next three steps.
 - Live probes (keys from Aya): Gemini free, Groq Qwen, Ollama Cloud Gemma 4 work; Fanar model not enabled; NVIDIA timed out; Cloudflare token invalid. Groq needed an explicit user agent. End-to-end live run on Groq through the CLI OK.
 - 1,084 tests; ruff and strict mypy clean. Committed locally, not pushed (IP clause pending).
 - **Next three steps:** Aya writes `config/prompts/` and the first 10 clinic scenarios; week-3 number on Gemini + Qwen (EGY + EN, hand-scored); sub-budget (c) normalisers and metrics.
+
+## 2026-11-05 · prompts, scenarios, CI/CD, outreach (assistant-run; Aya: keys, reviews, pushes)
+- Prompt v1 (system + clinic/banking policy blocks) written at Aya's request; `assistant_draft` provenance added (schema, lint, authoring tool with per-column approval).
+- gpt-oss-120b on Groq added and verified; Groq `tool_use_failed` mapped to a recorded malformed call (a model failure, not an exclusion).
+- Ten clinic pilot scenarios drafted, dialect wording attested against ~270k public Egyptian texts (app-store reviews, an archived tweet corpus); drafts excluded from the measured set until approved.
+- CI/CD: 11-job pipeline behind `ci-ok`, CodeQL, release workflow, Dependabot, repo hygiene; installed-wheel CLI bug fixed. History reworded to Conventional Commits; tag re-pointed.
+- Brain: `07 — Publishing & Outreach`, `08 — X Thread (Egyptian Arabic)` with dated update posts and screenshots in `x-media/`, `09 — Attestations with review IDs (private)`.
+- First real run started: ten drafts × EGY + EN on Gemini, Qwen, gpt-oss and Gemma (free).
+- **Next three steps:** scoring v1 + report (in progress); Aya reviews the ten drafts; the remaining 20 pilot scenarios.
