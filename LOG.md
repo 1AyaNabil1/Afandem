@@ -44,3 +44,9 @@ One entry per working session: date, hours, what was done, the next three steps.
 - First real run started: ten drafts × EGY + EN on Gemini, Qwen, gpt-oss and Gemma (free).
 - **Next three steps:** scoring v1 + report (in progress); Aya reviews the ten drafts; the remaining 20 pilot scenarios.
 - Later the same day: scorer v1 + `score`/`report` + golden traces + discovering oracle (1,472 tests). First run on the drafts (80 items, 247 calls, $0) scored and reported in `results/drafts-week3-2026-11-05/` as a first look; X posts with report screenshots added to the Brain.
+
+## 2026-11-05 · the remaining lints (assistant-run, worktree branch)
+- `afandem data lint` gains the calendar lint (clinic only, with the 2–5-days-ahead and Ramadan rules), the harmful-text lint (forbidden-topic lexicon in `lexicons/harmful.json`; pretext and step checks on refuse items) and the solvability lint (the discovering oracle, run offline on every act, ask and inform item). Judgement calls are in D24.
+- The oracle now answers `inform` items from its reads and finds banking beneficiaries by phone or name, ready for the banking scenarios. An impossible slot date (`2026-02-30`) is now a finding instead of a crash.
+- The ten clinic drafts and the fixtures pass all three lints. 1,772 tests; ruff, strict mypy and pre-commit clean.
+- **Next three steps:** Aya reviews D24 and the harmful word lists; the banking scenarios run through the solvability lint as they land; check "no identifiers beyond the synthetic state" on refuse items if wanted.

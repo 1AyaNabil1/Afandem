@@ -1,11 +1,11 @@
 # State — resume here
 
-*Rewrite this page at the end of every session.* Last updated: 2026-11-05 (late afternoon).
+*Rewrite this page at the end of every session.* Last updated: 2026-11-05 (evening).
 
 **Phase:** 1 (pilot). Sub-budgets (a), (b) and (c) built: scorer v1 (normalisers, forms matching, metrics, rule classifier), `afandem score` / `report`, golden traces and the discovering oracle (decision D22, for review). Pilot domains clinic + banking; free routes only until funded; publish the pilot at the Phase 1 exit. The repo is public and pushed (Aya cleared the IP question on 5 Nov); commits follow Conventional Commits (history reworded on 5 Nov, `prereg-v1` re-pointed before any pilot run).
 
 **What works:**
-- `uv run pytest` (1,472 tests, ~97% coverage).
+- `uv run pytest` (1,772 tests, ~98% coverage).
 - `afandem data lint <path> [--allow-drafts]`.
 - `afandem run --fake | --target <route>`, then `afandem score <run_dir> --scenarios data`, `afandem report <run_dir> --scenarios data`, plus `show` and `summary`.
 - `scripts/probe_providers.py [route]` and `scripts/export_cache.py`.
@@ -32,6 +32,7 @@
    - private vulnerability reporting and Dependabot security updates;
    - labels `data` and `results`.
 5. Optional: a Fanar key regenerated (the old one appeared in a screenshot).
+6. Review decision D24 (lint severities) and the forbidden-topic word lists in `src/afandem/lints/lexicons/harmful.json`, which the build agent drafted.
 
 **Next for the build:**
 - Calibrate the claims-done lexicon and the turn-1 rule classifier against Aya's labels (κ ≥ 0.6 gate).
@@ -42,4 +43,4 @@
 
 **Open notes:**
 - `tests/fixtures/scenarios/clinic/clinic-0042.json` (the spec example) and `tests/fixtures/smoke/` (placeholder texts) never go into `data/`.
-- Lints not built yet: calendar, harmful-text, solvability (the discovering oracle) and the 2–5-days-ahead rule.
+- Every lint in the spec's table now runs in `afandem data lint`. Calendar (with the 2–5-days-ahead rule), harmful-text and solvability were added on 5 Nov (decision D24). Solvability runs the discovering oracle offline; it now also answers `inform` items and finds banking beneficiaries by phone or name. Not checked yet: "no identifiers beyond the synthetic state" on refuse items.
