@@ -8,6 +8,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from afandem.lints.arabizi import check_arabizi_profile
+from afandem.lints.calendar import check_calendar
 from afandem.lints.codeswitch import check_cs_insertions
 from afandem.lints.corpus import check_corpus
 from afandem.lints.egyptian import (
@@ -45,6 +46,7 @@ ScenarioRule = Callable[[Scenario], list[Finding]]
 SCENARIO_RULES: Mapping[str, ScenarioRule] = {
     "slot_reextraction": check_slots,
     "slot_dates": check_slot_dates,
+    "calendar": check_calendar,
     "length_ratio": check_length_ratio,
     "egyptian_marker": check_egyptian_markers,
     "msa_ism": check_msa_isms,

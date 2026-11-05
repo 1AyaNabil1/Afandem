@@ -6,6 +6,7 @@ the result.
 """
 
 from afandem.lints.arabizi import check_arabizi_profile
+from afandem.lints.calendar import check_calendar
 from afandem.lints.codeswitch import check_cs_insertions
 from afandem.lints.corpus import check_corpus
 from afandem.lints.egyptian import (
@@ -42,6 +43,7 @@ __all__ = [
     "LintReport",
     "Severity",
     "check_arabizi_profile",
+    "check_calendar",
     "check_canary",
     "check_corpus",
     "check_cs_insertions",
