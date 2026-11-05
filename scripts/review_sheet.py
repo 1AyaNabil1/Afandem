@@ -58,6 +58,8 @@ def _what_happens(item: dict[str, Any]) -> list[str]:
     lines: list[str] = []
     if behaviour in ("act", "ask"):
         lines.append(f"- **Expected writes:** {_calls(expected.get('tool_calls'))}")
+        if not expected.get("end_state_patch"):
+            lines.append("- **The sandbox rejects that write** (state unchanged); reply says why")
     if behaviour == "ask":
         lines.append(
             f"- **Must ask about:** `{expected.get('expected_clarification')}` before any write"
