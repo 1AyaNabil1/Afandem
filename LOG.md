@@ -43,3 +43,4 @@ One entry per working session: date, hours, what was done, the next three steps.
 - Brain: `07 — Publishing & Outreach`, `08 — X Thread (Egyptian Arabic)` with dated update posts and screenshots in `x-media/`, `09 — Attestations with review IDs (private)`.
 - First real run started: ten drafts × EGY + EN on Gemini, Qwen, gpt-oss and Gemma (free).
 - **Next three steps:** scoring v1 + report (in progress); Aya reviews the ten drafts; the remaining 20 pilot scenarios.
+- Later the same day: scorer v1 + `score`/`report` + golden traces + discovering oracle (1,472 tests). First run on the drafts (80 items, 247 calls, $0) scored and reported in `results/drafts-week3-2026-11-05/` as a first look; X posts with report screenshots added to the Brain.
