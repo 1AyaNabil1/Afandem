@@ -1,0 +1,10 @@
+{
+  "source": "docs/dataset-spec.md §2 (EGY markers «عايز/عاوز», «عايزة/عايزه») and the Arabizi examples 3ayez, 3ayza",
+  "notes": [
+    "The spec defines no mechanical gender check; this is a heuristic on the speaker's 'want' participle only, reported as warnings.",
+    "«عايزه/عاوزه» are skipped: the final ه is either the feminine ending or the 'it' clitic on the masculine form.",
+    "Matching keeps ة distinct from ه (light folding)."
+  ],
+  "masculine": ["عايز", "عاوز", "3ayez"],
+  "feminine": ["عايزة", "عاوزة", "3ayza"]
+}

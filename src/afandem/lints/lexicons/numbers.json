@@ -1,0 +1,27 @@
+{
+  "source": "docs/dataset-spec.md §1 (inform example) and §3 (number_words_money)",
+  "notes": [
+    "forms: number words and money forms with their integer value; longer forms win («تلتميت وخمسين» is 350, not 300).",
+    "Digits in either numeral system, thousands separators (comma, dot, «٬») and the '2k' form are recognised in code."
+  ],
+  "forms": {
+    "ألف وربع": 1250,
+    "ألف ونص": 1500,
+    "تلتميت وخمسين": 350,
+    "تلتلاف": 3000,
+    "ميتين": 200,
+    "تلتميت": 300,
+    "ربعميه": 400,
+    "خمسميه": 500,
+    "ستميه": 600,
+    "سبعميه": 700,
+    "تمنميه": 800,
+    "تسعميه": 900,
+    "ألف وميتين وخمسين": 1250,
+    "ألف ومئتان وخمسون": 1250,
+    "alf w rob3": 1250,
+    "alf w miteen w 5amseen": 1250,
+    "talatmeet": 300,
+    "one thousand two hundred and fifty": 1250
+  }
+}

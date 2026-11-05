@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Afandem authoring</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-name">Afandem</span>
+    <span class="brand-sub">scenario authoring</span>
+  </div>
+  <p class="file-status" id="file-status" aria-live="polite"></p>
+  <nav class="actions" aria-label="File">
+    <button type="button" id="btn-new" class="secondary">New</button>
+    <button type="button" id="btn-open" class="secondary">Open…</button>
+    <button type="button" id="btn-save" class="primary" title="Cmd/Ctrl+S">Save JSON</button>
+    <button type="button" id="btn-discard" class="danger">Discard draft</button>
+  </nav>
+  <input type="file" id="open-input" accept=".json,application/json" hidden>
+  <input type="file" id="canary-input" accept=".txt,text/plain" hidden>
+</header>
+<div id="notices" class="notices"></div>
+<nav id="stepper" class="stepper" aria-label="Authoring steps"></nav>
+<main id="main" class="main"></main>
+<footer id="pager" class="pager"></footer>
+<noscript><p class="notice notice-error">This tool needs JavaScript.</p></noscript>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

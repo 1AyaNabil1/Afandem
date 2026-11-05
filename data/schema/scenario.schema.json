@@ -1,0 +1,712 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-schema-version": "1.0",
+  "$defs": {
+    "AnswerForm": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "description": "The normalised value (digits match it).",
+          "title": "Value"
+        },
+        "forms": {
+          "description": "Per-column surface forms of the value.",
+          "items": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "title": "Forms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "forms"
+      ],
+      "title": "AnswerForm",
+      "type": "object"
+    },
+    "ArabiziVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Text",
+          "type": "string"
+        },
+        "profile": {
+          "const": "variant",
+          "title": "Profile",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "hand",
+          "title": "Provenance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "profile",
+        "provenance"
+      ],
+      "title": "ArabiziVariant",
+      "type": "object"
+    },
+    "ChangelogEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "date": {
+          "format": "date",
+          "title": "Date",
+          "type": "string"
+        },
+        "note": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "date",
+        "note"
+      ],
+      "title": "ChangelogEntry",
+      "type": "object"
+    },
+    "ColumnText": {
+      "additionalProperties": false,
+      "description": "One of the six texts plus its per-column annotations.",
+      "properties": {
+        "text": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Text",
+          "type": "string"
+        },
+        "follow_up": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ask items: the answer to the clarification plus a confirmation.",
+          "title": "Follow Up"
+        },
+        "confirm_yes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "act items: 'yes, go ahead'.",
+          "title": "Confirm Yes"
+        },
+        "phenomena": {
+          "items": {
+            "enum": [
+              "digits_arabic_indic",
+              "digits_mixed",
+              "letter_variants",
+              "typo_keyboard",
+              "typo_phonetic",
+              "elongation_emoji",
+              "arabizi_digit_letter",
+              "arabizi_digit_clash",
+              "loan_arabic_script",
+              "cs_insertion"
+            ],
+            "type": "string"
+          },
+          "title": "Phenomena",
+          "type": "array"
+        },
+        "insertions": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Insertion"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "cs and cs_latin only: the English content insertions.",
+          "title": "Insertions"
+        },
+        "arabizi_profile": {
+          "anyOf": [
+            {
+              "const": "house",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "arabizi and cs_latin only.",
+          "title": "Arabizi Profile"
+        },
+        "phenomenon_realised": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "propertyNames": {
+            "enum": [
+              "date_relative_day",
+              "date_relative_weekday",
+              "date_numeric_dmy",
+              "number_words_money",
+              "negation_hedge_abort",
+              "third_party_request",
+              "date_month_part",
+              "date_hijri_ramadan",
+              "weekend_eg",
+              "time_colloquial",
+              "phone_eg",
+              "name_two_part",
+              "name_four_part",
+              "name_ambiguous",
+              "name_kunya_title",
+              "specialty_eg",
+              "visit_type",
+              "earliest_slot",
+              "multi_intent",
+              "politeness_indirect",
+              "addressee_feminine",
+              "register_terse",
+              "greeting_prefix",
+              "hyperbole_alarming",
+              "idiom_religious",
+              "idiom_violent",
+              "register_angry",
+              "uncertainty_ask",
+              "money_constraint"
+            ]
+          },
+          "title": "Phenomenon Realised",
+          "type": "object"
+        },
+        "natural": {
+          "description": "Self-rating 1-5; published, never a gate.",
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Natural",
+          "type": "integer"
+        },
+        "provenance": {
+          "const": "hand",
+          "title": "Provenance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "phenomena",
+        "phenomenon_realised",
+        "natural",
+        "provenance"
+      ],
+      "title": "ColumnText",
+      "type": "object"
+    },
+    "Expected": {
+      "additionalProperties": false,
+      "properties": {
+        "end_state_patch": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "description": "Changes to initial_state after a successful episode; {} = unchanged.",
+          "title": "End State Patch",
+          "type": "object"
+        },
+        "tool_calls": {
+          "description": "Expected validated writes.",
+          "items": {
+            "$ref": "#/$defs/ToolCall"
+          },
+          "title": "Tool Calls",
+          "type": "array"
+        },
+        "must_not_call": {
+          "description": "Tools (reads included) never to call.",
+          "items": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "title": "Must Not Call",
+          "type": "array"
+        },
+        "read_calls": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ToolCall"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "inform items only.",
+          "title": "Read Calls"
+        },
+        "answer_must_contain": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/AnswerForm"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "inform items (required); act items may use it too.",
+          "title": "Answer Must Contain"
+        },
+        "expected_clarification": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ask items: the slot the clarifying question must be about.",
+          "title": "Expected Clarification"
+        },
+        "reply_language": {
+          "const": "user",
+          "title": "Reply Language",
+          "type": "string"
+        }
+      },
+      "required": [
+        "end_state_patch",
+        "tool_calls",
+        "must_not_call",
+        "reply_language"
+      ],
+      "title": "Expected",
+      "type": "object"
+    },
+    "Insertion": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Text",
+          "type": "string"
+        },
+        "tool_cue": {
+          "description": "Does the insertion name or nearly name a tool?",
+          "title": "Tool Cue",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text",
+        "tool_cue"
+      ],
+      "title": "Insertion",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Now": {
+      "additionalProperties": false,
+      "description": "The scenario clock: Cairo wall-clock time plus the weekday it falls on.",
+      "properties": {
+        "local": {
+          "description": "Africa/Cairo wall-clock time, ISO 8601 with seconds; an explicit UTC offset is optional and, when given, must be Cairo's offset at that instant.",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([+-][0-9]{2}:[0-9]{2})?$",
+          "title": "Local",
+          "type": "string"
+        },
+        "tz": {
+          "const": "Africa/Cairo",
+          "title": "Tz",
+          "type": "string"
+        },
+        "weekday": {
+          "enum": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ],
+          "title": "Weekday",
+          "type": "string"
+        }
+      },
+      "required": [
+        "local",
+        "tz",
+        "weekday"
+      ],
+      "title": "Now",
+      "type": "object"
+    },
+    "Texts": {
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "$ref": "#/$defs/ColumnText"
+        },
+        "msa": {
+          "$ref": "#/$defs/ColumnText"
+        },
+        "egy": {
+          "$ref": "#/$defs/ColumnText"
+        },
+        "arabizi": {
+          "$ref": "#/$defs/ColumnText"
+        },
+        "cs": {
+          "$ref": "#/$defs/ColumnText"
+        },
+        "cs_latin": {
+          "$ref": "#/$defs/ColumnText"
+        }
+      },
+      "required": [
+        "en",
+        "msa",
+        "egy",
+        "arabizi",
+        "cs",
+        "cs_latin"
+      ],
+      "title": "Texts",
+      "type": "object"
+    },
+    "ToolCall": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Name",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "description": "Normalised arguments; a list holds the acceptable values for that field.",
+          "title": "Args",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "args"
+      ],
+      "title": "ToolCall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One Afandem scenario (docs/dataset-spec.md §1). Cross-field rules (behaviour-specific fields, tool names, changelog) are enforced by the pydantic model in afandem.scenarios.schema and by `afandem data lint`.",
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^(clinic|banking|telecom)-[0-9]{4}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "changelog": {
+      "items": {
+        "$ref": "#/$defs/ChangelogEntry"
+      },
+      "minItems": 1,
+      "title": "Changelog",
+      "type": "array"
+    },
+    "authoring_batch": {
+      "enum": [
+        "pilot",
+        "post_pilot"
+      ],
+      "title": "Authoring Batch",
+      "type": "string"
+    },
+    "fixed_after_pilot": {
+      "title": "Fixed After Pilot",
+      "type": "boolean"
+    },
+    "domain": {
+      "enum": [
+        "clinic",
+        "banking",
+        "telecom"
+      ],
+      "title": "Domain",
+      "type": "string"
+    },
+    "behaviour": {
+      "enum": [
+        "act",
+        "inform",
+        "ask",
+        "none",
+        "refuse",
+        "out_of_scope"
+      ],
+      "title": "Behaviour",
+      "type": "string"
+    },
+    "now": {
+      "$ref": "#/$defs/Now"
+    },
+    "user_identity": {
+      "additionalProperties": {
+        "minLength": 1,
+        "pattern": "\\S",
+        "type": "string"
+      },
+      "minProperties": 1,
+      "title": "User Identity",
+      "type": "object"
+    },
+    "tools": {
+      "items": {
+        "minLength": 1,
+        "pattern": "\\S",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Tools",
+      "type": "array"
+    },
+    "initial_state": {
+      "additionalProperties": true,
+      "title": "Initial State",
+      "type": "object"
+    },
+    "slots": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "title": "Slots",
+      "type": "object"
+    },
+    "expected": {
+      "$ref": "#/$defs/Expected"
+    },
+    "control_of": {
+      "anyOf": [
+        {
+          "pattern": "^(clinic|banking|telecom)-[0-9]{4}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Control Of"
+    },
+    "harm_type": {
+      "anyOf": [
+        {
+          "enum": [
+            "explicit_mismatch",
+            "inferable_mismatch"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Harm Type"
+    },
+    "gender": {
+      "description": "The speaker's gender, constant across the six texts.",
+      "enum": [
+        "m",
+        "f"
+      ],
+      "title": "Gender",
+      "type": "string"
+    },
+    "register": {
+      "enum": [
+        "polite",
+        "neutral",
+        "terse",
+        "angry"
+      ],
+      "title": "Register",
+      "type": "string"
+    },
+    "phenomena": {
+      "items": {
+        "enum": [
+          "date_relative_day",
+          "date_relative_weekday",
+          "date_numeric_dmy",
+          "number_words_money",
+          "negation_hedge_abort",
+          "third_party_request",
+          "date_month_part",
+          "date_hijri_ramadan",
+          "weekend_eg",
+          "time_colloquial",
+          "phone_eg",
+          "name_two_part",
+          "name_four_part",
+          "name_ambiguous",
+          "name_kunya_title",
+          "specialty_eg",
+          "visit_type",
+          "earliest_slot",
+          "multi_intent",
+          "politeness_indirect",
+          "addressee_feminine",
+          "register_terse",
+          "greeting_prefix",
+          "hyperbole_alarming",
+          "idiom_religious",
+          "idiom_violent",
+          "register_angry",
+          "uncertainty_ask",
+          "money_constraint"
+        ],
+        "type": "string"
+      },
+      "title": "Phenomena",
+      "type": "array"
+    },
+    "texts": {
+      "$ref": "#/$defs/Texts"
+    },
+    "arabizi_variant": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArabiziVariant"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "canary": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Canary",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "revision",
+    "changelog",
+    "authoring_batch",
+    "fixed_after_pilot",
+    "domain",
+    "behaviour",
+    "now",
+    "user_identity",
+    "tools",
+    "initial_state",
+    "slots",
+    "expected",
+    "gender",
+    "register",
+    "phenomena",
+    "texts",
+    "canary"
+  ],
+  "title": "Afandem scenario",
+  "type": "object"
+}

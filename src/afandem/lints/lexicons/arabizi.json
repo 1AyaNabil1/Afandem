@@ -1,0 +1,15 @@
+{
+  "source": "docs/dataset-spec.md §2 (Arabizi house and variant profiles) and the lint table",
+  "notes": [
+    "Written-as-pronounced cannot be linted; only these mechanical house/variant markers are.",
+    "house: no 6/9/8 as letters, no kh, no 3', no q outside /q/-words, article el (not al/l/ll), no ق-deletion forms. Names (scenario aliases) and declared CS insertions are exempt.",
+    "q_words: words that keep /q/ in the house profile (spec: qanoon, el Qahera); matched as a word start.",
+    "variant_words: the spec's ق-deletion examples."
+  ],
+  "digit_letters": ["6", "9", "8"],
+  "forbidden_sequences": ["kh", "3'"],
+  "q_words": ["qanoon", "qahera"],
+  "variant_articles": ["al", "l", "ll"],
+  "variant_words": ["aal", "alb"],
+  "min_variant_features": 2
+}

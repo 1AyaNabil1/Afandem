@@ -1,0 +1,41 @@
+{
+  "source": "docs/dataset-spec.md §2 (slot re-extraction lexicon) and §3 (date tags)",
+  "notes": [
+    "weekdays: the spec's Egyptian/MSA spellings and Arabizi forms; English names are the slot values themselves.",
+    "arabizi_articles: an Arabizi weekday stem counts only after one of these (bare «7ad» is «حد», someone). el = house article; al/l/ll = variant (spec); lel = «لل» and bel = «بال» as in the spec examples.",
+    "relative_days: days after `now`; «بكرة»/bokra/tomorrow and the MSA «غداً»/«الغد» are +1, «بعد بكرة»/ba3d bokra +2. A +1 form preceded by a blocker («بعد», ba3d, after) does not count.",
+    "months: standard Gregorian month names (Egyptian spellings, English names and abbreviations). NOT quoted from the spec beyond «نوفمبر» and 'Nov'; review and edit freely.",
+    "day_words: «يوم ٨» (spec, digits_mixed) gives the day of month without the month."
+  ],
+  "weekdays": {
+    "Sunday": {"arabic": ["الحد", "الأحد"], "arabizi": ["el 7ad"], "english": ["sunday"]},
+    "Monday": {"arabic": ["الاتنين", "الإتنين", "الإثنين"], "arabizi": ["el etnein"], "english": ["monday"]},
+    "Tuesday": {"arabic": ["التلات", "الثلاث", "الثلاثاء"], "arabizi": ["el talat"], "english": ["tuesday"]},
+    "Wednesday": {"arabic": ["الأربع", "الأربعاء"], "arabizi": ["el arba3"], "english": ["wednesday"]},
+    "Thursday": {"arabic": ["الخميس"], "arabizi": ["el 5amis"], "english": ["thursday"]},
+    "Friday": {"arabic": ["الجمعة", "الجمعه"], "arabizi": ["el gom3a"], "english": ["friday"]},
+    "Saturday": {"arabic": ["السبت"], "arabizi": ["el sabt"], "english": ["saturday"]}
+  },
+  "arabizi_articles": ["el", "al", "l", "ll", "lel", "bel"],
+  "relative_days": {
+    "1": ["بكرة", "bokra", "tomorrow", "غداً", "الغد"],
+    "2": ["بعد بكرة", "ba3d bokra"]
+  },
+  "relative_day_blockers": ["بعد", "ba3d", "after"],
+  "day_words": ["يوم"],
+  "month_words": ["شهر"],
+  "months": {
+    "1": ["يناير", "january", "jan"],
+    "2": ["فبراير", "february", "feb"],
+    "3": ["مارس", "march", "mar"],
+    "4": ["أبريل", "إبريل", "april", "apr"],
+    "5": ["مايو", "may"],
+    "6": ["يونيو", "يونيه", "june", "jun"],
+    "7": ["يوليو", "يوليه", "july", "jul"],
+    "8": ["أغسطس", "august", "aug"],
+    "9": ["سبتمبر", "september", "sep", "sept"],
+    "10": ["أكتوبر", "october", "oct"],
+    "11": ["نوفمبر", "november", "nov"],
+    "12": ["ديسمبر", "december", "dec"]
+  }
+}

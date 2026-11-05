@@ -23,3 +23,15 @@ One paragraph per design decision, newest last. The full reasoning is in [plan.m
 **D10 — 2026-11-04 · Leaderboard on a Hugging Face Space.** A static Space next to the dataset, not a GitHub Pages site.
 
 **D11 — 2026-11-05 · Phase 0 setup.** Python 3.14 with uv; all dependencies resolve (openai 3.46, google-genai 2.34, pydantic 2.14, numpy 2.5, scipy 1.18). The 5 Nov OpenRouter snapshot confirmed D8 for every grid model and all pinned providers exist; Fanar's spec confirms the `Fanar-2.0-Tools` id. Pre-registration v1 committed and tagged `prereg-v1`.
+
+**D12 — 2026-11-05 · Pilot domains: clinic + banking.** Aya's choice: the clearest checkable outcomes, and banking carries the most natural refusals, so RQ3 is exercised from the pilot on. Telecom moves to Phase 2.
+
+**D13 — 2026-11-05 · Free routes until funded.** No budget now. The pilot runs on Gemini 3.5 Flash-Lite (AI Studio free tier, OpenAI-compatible endpoint), Qwen3.8-27B (Groq free plan, Cloudflare overflow), DeepSeek V4.1 Flash (NVIDIA build) and Fanar-2.0-Tools when access arrives; optionally gpt-oss-20b locally. Claude and GPT have no free route (verified 5 Nov) and join when funded. All free routes are OpenAI-compatible, so Phase 1 builds one converter. Free tiers may train on prompts; only public data goes to them. If no funds exist at the Phase 3 freeze, the selection rule is relaxed by dated amendment. Details: [free-pilot-models.md](free-pilot-models.md).
+
+**D14 — 2026-11-05 · Hold-out confirmed.** All v0 data public; a separate private batch written later is a contamination probe only (D6 stands).
+
+**D15 — 2026-11-05 · People.** Aya can recruit native Egyptian testers (a second rater in v0) and native Gulf and Levantine speakers (v1 adapters); all are credited in the dataset card.
+
+**D16 — 2026-11-05 · Publishing route.** An academic adviser is approached with a research proposal for methodological feedback, venue advice and an arXiv endorsement. The pilot is published at the Phase 1 exit (dev data v0.1, results table, short post).
+
+**D17 — 2026-11-05 · Phase 1 sub-budget (a) built.** Scenario schema (pydantic, JSON Schema export), loader, 16 data lints (incl. the sandbox state check) and `afandem data lint`; clinic (7 tools) and banking (5 tools) sandboxes with clock, calendar, tri-script name lookup, principal checks and the three call levels; the project canary GUID; `docs/tools.md` (tool descriptions to be reviewed by Aya). 670 tests.

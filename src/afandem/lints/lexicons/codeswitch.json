@@ -1,0 +1,15 @@
+{
+  "source": "docs/dataset-spec.md §2 (CS and CS-Latin)",
+  "notes": [
+    "min_vocabulary: the minimum of the open insertion lexicon (insertions outside it are allowed).",
+    "discourse_markers: allowed in CS texts and never counted as insertions.",
+    "tool_cue_words: an insertion containing one of these names a tool, so its tool_cue must be true (others may be true too, e.g. reschedule).",
+    "article_forms: all accepted; the lint normalises them to «ال order»."
+  ],
+  "min_vocabulary": ["cancel", "reschedule", "book", "slot", "appointment", "order", "transfer", "balance", "bundle", "package", "net", "offer", "SIM", "line", "card", "OTP", "InstaPay", "block", "confirm"],
+  "discourse_markers": ["ok", "please", "thanks"],
+  "tool_cue_words": ["cancel", "book", "transfer", "balance", "recharge", "block"],
+  "article_forms": ["ال order", "الorder", "الـ order"],
+  "min_insertions": 1,
+  "max_insertions": 3
+}

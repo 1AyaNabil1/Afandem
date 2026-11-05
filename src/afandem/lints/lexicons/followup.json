@@ -1,0 +1,12 @@
+{
+  "source": "docs/dataset-spec.md §2 (Follow-ups and confirms) and §3 (time_colloquial periods)",
+  "notes": [
+    "yes/no: the spec lexicons, Arabic script and Arabizi together (CS confirms use 'ok').",
+    "ambiguous_alone: «خلاص» means 'go ahead' or 'forget it'; it never stands without an unambiguous yes word. 5alas is its Arabizi spelling (spec, arabizi_digit_letter).",
+    "period_words: a period word in a follow-up makes the gold a window (a list)."
+  ],
+  "yes": ["أيوه", "أيوة", "اه", "آه", "أه", "أكيد", "تمام", "ماشي", "يلا", "اوك", "aywa", "ah", "akeed", "tamam", "mashy", "yalla", "ok"],
+  "no": ["لأ", "لا", "مش كده", "بلاش"],
+  "ambiguous_alone": ["خلاص", "5alas"],
+  "period_words": ["الصبح", "الضهر", "بعد الضهر", "العصر", "المغرب", "بليل", "بالليل", "العشا", "ba3d el dohr", "el dohr", "bel leil"]
+}

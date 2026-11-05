@@ -1,0 +1,39 @@
+{
+  "source": "docs/dataset-spec.md §2, EGY positive check and MSA Egyptian-syntax lint",
+  "notes": [
+    "markers: the spec list «مش، عايز/عاوز، ده/دي، إزاي/ازاي، إمتى، فين، دلوقتي، بكرة، كده، اللي، بتاع، فيه، كمان، ليه، لسه، خالص» with «عايزة/عايزه» (spec: both accepted); «عاوزة/عاوزه» are the same feminine forms of «عاوز».",
+    "prefix_markers: matched as a word start, so «بتاعي» counts as «بتاع».",
+    "verb_prefixes + imperfect_letters: the spec's «هـ+verb» and «بـ+verb», detected as ه/ب + an imperfect prefix letter in a word of at least verb_min_length letters. This is a heuristic: in EGY/CS it is a weak marker (warning when it is the only one); in MSA only «هأ» is an error, ه + ت/ي/ن is a warning and بـ+verb is not checked (MSA «بتاريخ»).",
+    "msa_warning_only: markers that are also plain MSA («فيه» = in it), reported as warnings in the MSA column."
+  ],
+  "markers": [
+    "مش",
+    "عايز",
+    "عايزة",
+    "عايزه",
+    "عاوز",
+    "عاوزة",
+    "عاوزه",
+    "ده",
+    "دي",
+    "إزاي",
+    "ازاي",
+    "إمتى",
+    "فين",
+    "دلوقتي",
+    "بكرة",
+    "كده",
+    "اللي",
+    "بتاع",
+    "فيه",
+    "كمان",
+    "ليه",
+    "لسه",
+    "خالص"
+  ],
+  "prefix_markers": ["بتاع"],
+  "verb_prefixes": ["ه", "ب"],
+  "imperfect_letters": ["أ", "ا", "ت", "ي", "ن"],
+  "verb_min_length": 4,
+  "msa_warning_only": ["فيه"]
+}

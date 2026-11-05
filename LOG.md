@@ -20,3 +20,9 @@ One entry per working session: date, hours, what was done, the next three steps.
 - `scripts/probe_providers.py` ready; not run (no keys yet).
 - `docs/preregistration.md` v1 committed and tagged `prereg-v1`.
 - **Next three steps (Aya):** accounts and keys (OpenRouter, two Google projects, Hugging Face token, Fanar request); run the probe script; deposit the pre-registration externally.
+
+## 2026-11-05 · Phase 1 start (assistant-run)
+- Her decisions: pilot clinic + banking; free routes only; publish the pilot; hold-out as recommended; testers and Gulf/Levantine speakers she recruits; an academic adviser approached with a research proposal.
+- Free tool-calling routes researched and documented (`docs/free-pilot-models.md`); probe script rewritten for them.
+- Sub-budget (a): scenario schema, loader, JSON Schema, 16 lints, `afandem data lint`; clinic and banking sandboxes; canary GUID; `docs/tools.md`. 670 tests; ruff and strict mypy clean. Committed locally, not pushed (IP-clause check pending).
+- **Next three steps:** free API keys + probes; review tool descriptions; author the first 10 clinic scenarios with the authoring tool.
