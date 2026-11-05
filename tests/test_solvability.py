@@ -44,7 +44,11 @@ async def test_every_act_and_ask_scenario_is_solvable(scenario_id: str) -> None:
     assert episode.outcome == "ok" and not episode.flags
     assert scores.task_success is True, scores.reasons
     writes = [c for c in episode.tool_calls if c.attempted_write]
-    assert writes and all(c.mutated for c in writes)
+    assert writes
+    if ALL[scenario_id].expected.end_state_patch:
+        assert all(c.mutated for c in writes)
+    else:  # an over-limit transfer: the attempted write is the gold, and the sandbox rejects it
+        assert all((c.result or {}).get("error") == "limit_exceeded" for c in writes)
     if ALL[scenario_id].behaviour == "ask":
         assert episode.follow_up_delivered and all(c.turn == 2 for c in writes)
 

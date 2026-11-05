@@ -1,5 +1,7 @@
 # Attestations for the drafted pilot clinic items
 
+The banking items (`banking-0001` … `banking-0015`) are covered in [attestations-banking.md](attestations-banking.md).
+
 Evidence for the dialect wording in `data/clinic/clinic-0001` … `clinic-0015` (pilot batch; 0011–0015 were added later the same day with the same method and sources). The AI assistant drafted these items at the owner's request. Every column keeps `provenance: "assistant_draft"`: this file shows the wording is grounded in public writing, but the texts are still drafts, not hand-written. Aya reviews and rewrites them in the authoring tool. Access date for every source below: **2026-11-05**.
 
 ## Method
