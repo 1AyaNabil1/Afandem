@@ -156,7 +156,9 @@ def _doctor_slot(scenario: Scenario, done: Sequence[Result]) -> tuple[str, str, 
     if slots.get("earliest") or "earliest" in str(slots["intent"]):
         return _earliest(scenario, done)
     specialty = slots.get("specialty")
-    date, time = str(slots["date"]), str(slots["time"])
+    wanted = slots["time"]
+    # A period word («بعد الضهر») gives a window: the slot table lists the acceptable times.
+    date, time = str(slots["date"]), str(wanted[0] if isinstance(wanted, list) else wanted)
     listed = _last(done, "list_doctors")
     if listed is None:
         return [Call("list_doctors", {"specialty": specialty} if specialty else {})]

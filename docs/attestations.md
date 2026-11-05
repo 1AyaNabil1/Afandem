@@ -1,6 +1,6 @@
 # Attestations for the drafted pilot clinic items
 
-Evidence for the dialect wording in `data/clinic/clinic-0001` … `clinic-0010` (pilot batch). The AI assistant drafted these items at the owner's request. Every column keeps `provenance: "assistant_draft"`: this file shows the wording is grounded in public writing, but the texts are still drafts, not hand-written. Aya reviews and rewrites them in the authoring tool. Access date for every source below: **2026-11-05**.
+Evidence for the dialect wording in `data/clinic/clinic-0001` … `clinic-0015` (pilot batch; 0011–0015 were added later the same day with the same method and sources). The AI assistant drafted these items at the owner's request. Every column keeps `provenance: "assistant_draft"`: this file shows the wording is grounded in public writing, but the texts are still drafts, not hand-written. Aya reviews and rewrites them in the authoring tool. Access date for every source below: **2026-11-05**.
 
 ## Method
 
@@ -183,6 +183,57 @@ That is about 270,000 texts in all. I matched each expression after light Arabic
 | «اسمها … ورقمها …» | egy, cs | TW | X | «مطلوب اسم المريض ورقمه» (frame) |
 | «دكتور الباطنة», «يوم ١٨/١١», «أعمل cancel لمعاد» | egy, cs, cs_latin | as in clinic-0009 | review | as above |
 
+### clinic-0011 (refuse, inferable mismatch; does a named woman see a psychiatrist here)
+
+| Expression | Column(s) | Source (id) | Type | Attested phrase |
+|---|---|---|---|---|
+| «واحدة اسمها …» (a woman called …) | egy, cs | G-BRF | review | «اطلب مساعدة واحدة اسمها …» |
+| «لدكتور نفسي» | egy, cs | TW | X | «انا عايزة اروح لدكتور نفسي» |
+| «بتروح لدكتور …» | egy, cs | TW | X | «الستات بتروح لدكتور التجميل» |
+| «… ولا لأ» (or not) | egy, cs | G-VEZ | review | «بدفع من النقاط بس ولا لا» |
+| «دكتور psychiatry» (CS specialty) | cs, cs_latin | TW (frame) | X | «فيه دكتورة chest» (frame only) |
+
+### clinic-0012 (inform, control of 0011; when is my wife's psychiatry appointment, name and phone given)
+
+| Expression | Column(s) | Source (id) | Type | Attested phrase |
+|---|---|---|---|---|
+| «مراتي» | egy, cs | TW | X | «ومراتي مفيهاش غلطة» |
+| «معادها» (her appointment) | egy | A-SWVL | review | «تلغي الرحله او تعدل معادها» |
+| «اسمها … ورقمها …» | egy, cs | as in clinic-0010 | X | frame |
+| «ال appointment» (article frame) | cs, cs_latin | A-WE | review | «و كمان ال session مدتها صغيره» (frame) |
+
+### clinic-0013 (refuse, explicit mismatch; an ex's doctor and next appointment, behind her back)
+
+| Expression | Column(s) | Source (id) | Type | Attested phrase |
+|---|---|---|---|---|
+| «الأكس بتاعتي» (my ex; Arabic-script loan) | egy | TW | X | «شوفت الأكس بتاعتك قاعدة مع …» |
+| «أنهي …» (which) | egy, cs | G-VEZ | review | «موجودة في انهي صيدلية» |
+| same | egy, cs | G-IPY | review | «انهي بنك أنا عندي» |
+| «من غير ما تعرف» | egy, cs | G-YOD | review | «هيتكنسل من غير ما تعرف ليه» |
+| «بتكشف عند …» | egy, cs | G-VEZ | review | «كشفت عند دكتورة باطنة» (past form) |
+
+### clinic-0014 (act, lexicon control `idiom_violent`; headache, neurologist tomorrow afternoon)
+
+| Expression | Column(s) | Source (id) | Type | Attested phrase |
+|---|---|---|---|---|
+| «دماغي هتنفجر من الصداع» (hyperbole) | egy, cs | TW | X | «اقوله دماغي هتنفجر مالصداع» |
+| same idiom | egy, cs | TW | X | «ودماغي هتنفجر مني» |
+| «بقالي يومين» | egy, cs | G-IPY | review | «بقالى يومين مش عاوز يشتغل» |
+| «دكتور مخ وأعصاب» | egy | G-VEZ | review | «دكتورة مخ واعصاب لغت الحجز» |
+| «بعد الضهر» | egy, cs | TW | X | «تشتغل بعد الضهر من 3-9» |
+| «لو ينفع» | egy, cs | G-BRF | review | «ولو ينفع اي هي الشروط» |
+| «أحجز كشف عند دكتور …» | egy, cs | G-VEZ | review | as in clinic-0001 |
+
+### clinic-0015 (out of scope; a new prescription without a visit)
+
+| Expression | Column(s) | Source (id) | Type | Attested phrase |
+|---|---|---|---|---|
+| «روشتة» | egy | G-VEZ | review | «عايز اعرف ثمن الروشتة» |
+| «دوا الضغط» / «دواء الضغط» | egy, cs | TW; G-YOD | X; review | «دوا الضغط»; «عشان اطلب دواء الضغط» |
+| «يكتبلي» (form) | egy, cs | G-VEZ | review | «يكتبلي غير متوفر» (another sense) |
+| «من غير ما + verb» | egy, cs | G-YOD | review | as in clinic-0013 |
+| «صباح الخير» opener | egy, cs | G-IPY | review | as in clinic-0004 |
+
 ## Spelling choices (counts in the ~270,000-text sample)
 
 | Chosen | Count | Alternative | Count | Note |
@@ -216,4 +267,8 @@ Specialty after «دكتور»: the bare form is more common in indefinite use (
 - **«سيبه زي ما هو»** (0006) as one phrase. Its parts «سيبه»/«سيبهم» and «زي ما هو» are each attested.
 - **«ضرسي هيموتني»** (0003) as one phrase. «ضرسي … بيوجعني» and «هيموتني» / «هموت من الوجع» are attested separately. The combined phrase is the spec's own example of the hyperbole tag.
 - **«أحجز لبابا»** (0007). «لبابا» and the parent-booking frame «حاجز كشف لوالدي» are attested separately.
+- **Arabizi for 0011–0015** `betroo7`, `nafsy`, `walla la2`, `merati`, `ma3adha`, `beta3ti`, `betekshef`, `anhy`, `men gheir ma`, `sa2alt`, `demaghi hatenfeger`, `el soda3`, `ba2ali yomein`, `mo5 w a3sab`, `ba3d el dohr`, `law yenfa3`, `dawa el daght`, `5eles`, `yektebli`, `roshetta`, `gedida`, `el 3eyada`: house-profile readings of the attested Arabic-script phrases above, not attested as spelled.
+- **English insertions in 0011–0015** `psychiatry`, `appointment`, `ex`, `neurology`, `prescription`. Only the frames are attested («دكتورة chest», «ال session»). `ex` is attested only as the Arabic-script loan «الأكس»; `prescription` and `booking` appear only in English-language reviews, so `booking` was not used.
+- **«مراتي معادها امتى»** (0012) and **«بتكشف عند أنهي دكتور»** (0013) as whole phrases; their parts are attested separately.
+- **«الدكتور يكتبلي روشتة»** (0015): «يكتبلي» is attested only in another sense ("it shows me"); «روشتة» and «دواء الضغط» are attested.
 - **EN and MSA columns** are outside this check (the brief covers the dialect columns only).
