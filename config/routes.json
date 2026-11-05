@@ -1,0 +1,339 @@
+{
+  "version": 1,
+  "checked": "2026-11-05",
+  "sources": "docs/free-pilot-models.md (free routes); config/model_params.json from models-2026-11-05.json (OpenRouter params_sent and pins)",
+  "routes": [
+    {
+      "name": "gemini_free",
+      "label": "gemini-3.5-flash-lite@aistudio-free",
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "key_env": "GEMINI_FREE_API_KEY",
+      "model": "gemini-3.5-flash-lite",
+      "params": {
+        "temperature": 0,
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "reasoning_effort": "low"
+      },
+      "rpm": 8,
+      "tpm": 250000,
+      "concurrency": 2,
+      "timeout_s": 60,
+      "free": true,
+      "verified": true,
+      "droppable": [
+        "reasoning_effort"
+      ],
+      "notes": "Google's OpenAI-compatible endpoint (beta), AI Studio free tier, key from a project without billing. reasoning_effort maps to thinking_level (low, a stated choice; thinking cannot be switched off). Tool-call dicts carry extra_content.google.thought_signature and are echoed verbatim by the converter. Limits are third-party figures (~10 RPM, 250K TPM, 500 RPD, reset at midnight Pacific); her AI Studio page is the authority. Probed 5 Nov 2026: all params accepted; thought signature arrives in tool_calls[].extra_content.google.thought_signature and the verbatim echo is accepted; one transient 503 on round 2."
+    },
+    {
+      "name": "groq_qwen",
+      "label": "qwen3.8-27b@groq",
+      "base_url": "https://api.groq.com/openai/v1",
+      "key_env": "GROQ_API_KEY",
+      "model": "qwen/qwen3.8-27b",
+      "params": {
+        "temperature": 0,
+        "seed": 42,
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "reasoning_effort": "none"
+      },
+      "rpm": 30,
+      "tpm": 8000,
+      "tpm_counts_max_tokens": false,
+      "concurrency": 1,
+      "timeout_s": 60,
+      "free": true,
+      "verified": true,
+      "droppable": [
+        "reasoning_effort",
+        "seed"
+      ],
+      "notes": "Groq free plan: 30 RPM, 1K RPD, 8K TPM, 200K TPD per organization (official, 5 Nov). Probed 5 Nov 2026: temperature 0, seed, reasoning_effort none and tool_choice auto accepted; tool call and verbatim echo OK. Rate-limit headers after a 460-token call showed 7,540 of 8,000 tokens remaining, so Groq counts tokens used, not max_tokens. Groq's edge rejects library default user agents (Cloudflare 1010); the harness sends afandem/<version>. system_fingerprint changes between consecutive calls. Model is Preview on Groq."
+    },
+    {
+      "name": "nvidia_deepseek",
+      "label": "deepseek-v4.1-flash@nvidia",
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "key_env": "NVIDIA_API_KEY",
+      "model": "deepseek-ai/deepseek-v4.1-flash",
+      "params": {
+        "temperature": 0,
+        "max_tokens": 4096,
+        "tool_choice": "auto"
+      },
+      "rpm": 35,
+      "concurrency": 2,
+      "timeout_s": 120,
+      "free": true,
+      "verified": false,
+      "notes": "NVIDIA build trial (~40 RPM per key, forum report; no daily cap reported). Free endpoints can queue, hence the longer timeout. The thinking control for this model on NVIDIA is not documented in our notes: the probe must show whether reasoning is on by default and how to switch it off."
+    },
+    {
+      "name": "cloudflare_qwen",
+      "label": "qwen3.8-27b@cloudflare",
+      "base_url": "https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1",
+      "key_env": "CLOUDFLARE_API_TOKEN",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "params": {
+        "temperature": 0,
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "reasoning_effort": "low"
+      },
+      "rpm": 60,
+      "concurrency": 2,
+      "timeout_s": 60,
+      "free": true,
+      "verified": false,
+      "droppable": [
+        "reasoning_effort"
+      ],
+      "notes": "Overflow for Qwen3.8-27B: Workers AI free plan, 10,000 neurons/day shared by every model on the account, reset 00:00 UTC. Model default reasoning is xhigh, so low is sent (none is not in the model page's list); this differs from groq_qwen's none, so its rows are labelled separately. Whether tools pass through the /ai/v1 path is unverified."
+    },
+    {
+      "name": "fanar_tools",
+      "label": "fanar-2.0-tools@fanar",
+      "base_url": "https://api.fanar.qa/v1",
+      "key_env": "FANAR_API_KEY",
+      "model": "Fanar-2.0-Tools",
+      "model_env": "FANAR_MODEL",
+      "params": {
+        "temperature": 0,
+        "max_tokens": 1024,
+        "tool_choice": "auto"
+      },
+      "tool_name_in_tool_msg": true,
+      "rpm": 45,
+      "concurrency": 4,
+      "timeout_s": 60,
+      "max_context_tokens": 8192,
+      "context_guard_tokens": 7000,
+      "free": true,
+      "verified": false,
+      "notes": "Access by request; Fanar-2.0-Tools needs extra authorization. Whitelist: temperature, max_tokens, tools, tool_choice (auto/none only); no seed, no parallel_tool_calls. 8K context with HTTP 413 above it; the prompt-size guard stops at ~7,000 estimated tokens (chars/3). 50 RPM per round trip (official); daily window from the ratelimit-policy header."
+    },
+    {
+      "name": "ollama_local",
+      "label": "gpt-oss-20b@ollama",
+      "base_url": "http://localhost:11434/v1",
+      "key_env": null,
+      "model": "gpt-oss:20b",
+      "model_env": "OLLAMA_MODEL",
+      "params": {
+        "temperature": 0,
+        "max_tokens": 4096,
+        "reasoning_effort": "low"
+      },
+      "concurrency": 1,
+      "timeout_s": 300,
+      "free": true,
+      "verified": false,
+      "droppable": [
+        "reasoning_effort"
+      ],
+      "notes": "Optional local model. Ollama does not support tool_choice, so it is not sent. Set the context length to at least 16K (OLLAMA_CONTEXT_LENGTH). Sequential requests keep the system-prompt and tools prefix in the KV cache."
+    },
+    {
+      "name": "ollama_cloud",
+      "label": "gemma4-31b@ollama-cloud",
+      "base_url": "https://ollama.com/v1",
+      "key_env": "OLLAMA_API_KEY",
+      "model": "gemma4:31b-cloud",
+      "params": {
+        "temperature": 0,
+        "max_tokens": 4096,
+        "tool_choice": "auto"
+      },
+      "concurrency": 1,
+      "timeout_s": 300,
+      "free": true,
+      "verified": true,
+      "notes": "Ollama Cloud (hosted open-weight models) with an ollama.com API key. On the free plan, gemma4:31b-cloud is included; deepseek-v4.1-flash returned 402 'not included in your free usage' on 5 Nov 2026. Probed 5 Nov: one tool call, verbatim echo with the tool_calls `index` field accepted, round 2 OK. Free-plan usage limits are not published per model; watch for 429/402."
+    },
+    {
+      "name": "openrouter_haiku",
+      "label": "claude-haiku-5.5@openrouter",
+      "base_url": "https://openrouter.ai/api/v1",
+      "key_env": "OPENROUTER_API_KEY",
+      "model": "anthropic/claude-haiku-5.5",
+      "params": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "reasoning": {
+          "effort": "none"
+        }
+      },
+      "provider_prefs": {
+        "provider": {
+          "order": [
+            "anthropic"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true,
+          "data_collection": "deny"
+        }
+      },
+      "echo": [
+        "reasoning_details"
+      ],
+      "extra_headers": {
+        "X-Title": "afandem"
+      },
+      "concurrency": 6,
+      "timeout_s": 60,
+      "free": false,
+      "verified": false,
+      "notes": "Paid grid, unused until funded. params_sent from config/model_params.json (no temperature or seed)."
+    },
+    {
+      "name": "openrouter_sonnet",
+      "label": "claude-sonnet-5.5@openrouter",
+      "base_url": "https://openrouter.ai/api/v1",
+      "key_env": "OPENROUTER_API_KEY",
+      "model": "anthropic/claude-sonnet-5.5",
+      "params": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "reasoning": {
+          "effort": "low"
+        }
+      },
+      "provider_prefs": {
+        "provider": {
+          "order": [
+            "anthropic"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true,
+          "data_collection": "deny"
+        }
+      },
+      "echo": [
+        "reasoning_details"
+      ],
+      "extra_headers": {
+        "X-Title": "afandem"
+      },
+      "concurrency": 6,
+      "timeout_s": 60,
+      "free": false,
+      "verified": false,
+      "notes": "Paid grid, unused until funded. Reasoning is mandatory, so effort low; reasoning_details must be echoed on multi-step calls."
+    },
+    {
+      "name": "openrouter_luna",
+      "label": "gpt-6-luna@openrouter",
+      "base_url": "https://openrouter.ai/api/v1",
+      "key_env": "OPENROUTER_API_KEY",
+      "model": "openai/gpt-6-luna",
+      "params": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "seed": 42,
+        "reasoning": {
+          "effort": "none"
+        }
+      },
+      "provider_prefs": {
+        "provider": {
+          "order": [
+            "openai"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true,
+          "data_collection": "deny"
+        }
+      },
+      "echo": [
+        "reasoning_details"
+      ],
+      "extra_headers": {
+        "X-Title": "afandem"
+      },
+      "concurrency": 6,
+      "timeout_s": 60,
+      "free": false,
+      "verified": false,
+      "notes": "Paid grid, unused until funded. Takes seed, not temperature."
+    },
+    {
+      "name": "openrouter_qwen",
+      "label": "qwen3.8-27b@openrouter",
+      "base_url": "https://openrouter.ai/api/v1",
+      "key_env": "OPENROUTER_API_KEY",
+      "model": "qwen/qwen3.8-27b",
+      "params": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "temperature": 0,
+        "seed": 42,
+        "reasoning": {
+          "effort": "none"
+        }
+      },
+      "provider_prefs": {
+        "provider": {
+          "order": [
+            "deepinfra"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true,
+          "quantizations": [
+            "bf16"
+          ],
+          "data_collection": "deny"
+        }
+      },
+      "echo": [
+        "reasoning_details"
+      ],
+      "extra_headers": {
+        "X-Title": "afandem"
+      },
+      "concurrency": 6,
+      "timeout_s": 60,
+      "free": false,
+      "verified": false,
+      "notes": "Paid grid, unused until funded. Pinned to DeepInfra bf16 (23 Qwen endpoints from fp4 to bf16 exist)."
+    },
+    {
+      "name": "openrouter_gemini",
+      "label": "gemini-3.5-flash-lite@openrouter",
+      "base_url": "https://openrouter.ai/api/v1",
+      "key_env": "OPENROUTER_API_KEY",
+      "model": "google/gemini-3.5-flash-lite",
+      "params": {
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "temperature": 0,
+        "seed": 42,
+        "reasoning": {
+          "effort": "low"
+        }
+      },
+      "provider_prefs": {
+        "provider": {
+          "order": [
+            "google-ai-studio"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true,
+          "data_collection": "deny"
+        }
+      },
+      "echo": [
+        "reasoning_details"
+      ],
+      "extra_headers": {
+        "X-Title": "afandem"
+      },
+      "concurrency": 6,
+      "timeout_s": 60,
+      "free": false,
+      "verified": false,
+      "notes": "Paid grid, unused until funded. Used only if the thought signature survives the reasoning_details round trip (day-1 probe)."
+    }
+  ]
+}

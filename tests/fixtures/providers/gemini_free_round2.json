@@ -1,0 +1,102 @@
+{
+  "request": {
+    "model": "gemini-3.5-flash-lite",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a clinic booking assistant. Today is Wednesday 2026-11-04 (Africa/Cairo). Use the tools to act. Ask when a required detail is missing."
+      },
+      {
+        "role": "user",
+        "content": "Please book me an appointment this Sunday at 5 pm. My name is Mona Mahmoud."
+      },
+      {
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "extra_content": {
+              "google": {
+                "thought_signature": "EmAKXgFpFH0T4q/CFh5zf+FyWJmfcyuwnfcrOu7ladmw6EvdRELpT0TJgKDgMu2ATrqbh//ST+aaUNKQOkmQZAQnVIBCPWr1sBBWtV2+FEK7cazV7XA6ZUY3qkkWjakEOfU="
+              }
+            },
+            "function": {
+              "arguments": "{\"date\":\"2026-11-08\",\"time\":\"17:00\",\"patient_name\":\"Mona Mahmoud\"}",
+              "name": "book_appointment"
+            },
+            "id": "call_440816",
+            "type": "function"
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_440816",
+        "content": "{\"appointment_id\": \"appt_0001\", \"status\": \"booked\"}"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "book_appointment",
+          "description": "Book a clinic appointment.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_name": {
+                "type": "string",
+                "description": "Full name of the patient"
+              },
+              "date": {
+                "type": "string",
+                "description": "ISO date, YYYY-MM-DD"
+              },
+              "time": {
+                "type": "string",
+                "description": "24-hour time, HH:MM"
+              }
+            },
+            "required": [
+              "patient_name",
+              "date",
+              "time"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "temperature": 0,
+    "max_tokens": 4096,
+    "tool_choice": "auto",
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "response": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "Your appointment has been successfully booked for this Sunday, November 8, 2026, at 5:00 PM. Your appointment ID is appt_0001.",
+          "extra_content": {
+            "google": {
+              "thought_signature": "EmAKXgFpFH0TeK747Ud5M9ugJ/HDKzRq3xm+nfPcqquAw7tbpR39t0BKIybo+zf1RaLVGWXvokC0+VynmZToBlOaXWw1H72qry/XaOdGr7mbzCcVxbWHEdT0ixMkuEZZjMQ="
+            }
+          },
+          "role": "assistant"
+        }
+      }
+    ],
+    "created": 1793879496,
+    "id": "wW3savirDMGivdIPnbLK8Q0",
+    "model": "gemini-3.5-flash-lite",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 40,
+      "prompt_tokens": 246,
+      "total_tokens": 286
+    }
+  },
+  "headers": {}
+}

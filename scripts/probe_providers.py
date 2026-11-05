@@ -3,15 +3,22 @@
     uv run --env-file .env python scripts/probe_providers.py            # every route with a key
     uv run --env-file .env python scripts/probe_providers.py groq_qwen  # one route
 
-Each probe sends one English user message with one tool, then (if the model called the
-tool) sends the assistant turn back exactly as received with a tool result, and saves the
-raw requests (without keys) and responses to tests/fixtures/providers/<route>_round{1,2}.json.
-If a reasoning/thinking parameter is rejected, the probe retries once without it and
-records both. Probes whose key is missing are skipped. All routes are free except the
-OpenRouter ones (paid models, later).
+Routes (endpoint, model, params_sent, provider preferences, echo list) come from
+config/routes.json, so the probe sends what the harness will send. Each probe sends one
+English user message with one tool, then (if the model called the tool) sends the assistant
+turn back exactly as received with a tool result, and saves the raw requests (without keys),
+responses and rate-limit headers to tests/fixtures/providers/<route>_round{1,2}.json.
 
-The pilot runs on the free routes (docs/free-pilot-models.md); OpenRouter is for the paid
-grid once funded.
+- A 400 on round 1 drops the route's `droppable` params once and retries; both calls are
+  saved (`<route>_round1_rejected.json`).
+- A 400 on round 2 (the verbatim echo) retries once with the harness echo (role, content,
+  tool_calls plus the route's `echo` fields); both calls are saved.
+- Routes whose key (or URL placeholder such as CLOUDFLARE_ACCOUNT_ID) is missing are skipped.
+  The keyless local route (Ollama) runs only when OLLAMA_PROBE is set or it is named.
+
+All routes are free except the OpenRouter ones (paid models, later). After a probe passes,
+set the route's `verified` to true in config/routes.json and note the date in
+docs/providers.md.
 """
 
 import json
@@ -20,9 +27,12 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from afandem.providers.http import USER_AGENT
+from afandem.providers.routes import MissingKeyError, RouteConfig, load_routes, resolve_route
+from afandem.providers.wire import message_to_wire, messages_from_wire
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "tests" / "fixtures" / "providers"
@@ -52,110 +62,37 @@ TOOLS = [
         },
     }
 ]
+RATE_HEADER_PREFIXES = ("x-ratelimit", "ratelimit", "retry-after", "x-request-id")
 
 
-@dataclass(frozen=True)
-class Route:
-    name: str
-    key_env: str
-    base_url: str
-    model: str
-    params: dict[str, Any] = field(default_factory=dict)
-    droppable: tuple[str, ...] = ()  # params to drop and retry if the first call is a 400
-    extra_headers: dict[str, str] = field(default_factory=dict)
-
-
-def _cloudflare_url() -> str:
-    account = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "<account>")
-    return f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/v1"
-
-
-ROUTES = [
-    Route(
-        "gemini_openai_compat",
-        "GEMINI_FREE_API_KEY",
-        "https://generativelanguage.googleapis.com/v1beta/openai",
-        "gemini-3.5-flash-lite",
-        {"temperature": 0, "reasoning_effort": "low", "tool_choice": "auto"},
-        droppable=("reasoning_effort",),
-    ),
-    Route(
-        "groq_qwen",
-        "GROQ_API_KEY",
-        "https://api.groq.com/openai/v1",
-        "qwen/qwen3.8-27b",
-        {"temperature": 0, "seed": 42, "reasoning_effort": "none", "tool_choice": "auto"},
-        droppable=("reasoning_effort", "seed"),
-    ),
-    Route(
-        "nvidia_deepseek",
-        "NVIDIA_API_KEY",
-        "https://integrate.api.nvidia.com/v1",
-        "deepseek-ai/deepseek-v4.1-flash",
-        {"temperature": 0, "tool_choice": "auto"},
-    ),
-    Route(
-        "cloudflare_qwen",
-        "CLOUDFLARE_API_TOKEN",
-        _cloudflare_url(),
-        "@cf/qwen/qwen3.8-27b",
-        {"temperature": 0, "reasoning_effort": "low", "tool_choice": "auto"},
-        droppable=("reasoning_effort",),
-    ),
-    Route(
-        "fanar_tools",
-        "FANAR_API_KEY",
-        "https://api.fanar.qa/v1",
-        os.environ.get("FANAR_MODEL", "Fanar-2.0-Tools"),
-        {"temperature": 0, "tool_choice": "auto", "max_tokens": 1024},
-    ),
-    Route(
-        "ollama_local",
-        "OLLAMA_PROBE",
-        "http://localhost:11434/v1",
-        os.environ.get("OLLAMA_MODEL", "gpt-oss:20b"),
-        {"temperature": 0},
-    ),
-    # Paid routes for the funded grid (not used by the free pilot).
-    Route(
-        "openrouter_haiku",
-        "OPENROUTER_API_KEY",
-        "https://openrouter.ai/api/v1",
-        "anthropic/claude-haiku-5.5",
-        {
-            "reasoning": {"effort": "none"},
-            "tool_choice": "auto",
-            "max_tokens": 4096,
-            "provider": {
-                "order": ["anthropic"],
-                "allow_fallbacks": False,
-                "require_parameters": True,
-                "data_collection": "deny",
-            },
-        },
-        extra_headers={"X-Title": "afandem-probe"},
-    ),
-]
+def _rate_headers(headers: Any) -> dict[str, str]:
+    if headers is None:
+        return {}
+    return {
+        name.lower(): value
+        for name, value in headers.items()
+        if name.lower().startswith(RATE_HEADER_PREFIXES)
+    }
 
 
 def _request(
     method: str, url: str, headers: dict[str, str], body: dict[str, Any] | None = None
-) -> tuple[int, Any]:
+) -> tuple[int, Any, dict[str, str]]:
     data = None if body is None else json.dumps(body, ensure_ascii=False).encode()
     request = urllib.request.Request(
         url, data=data, method=method, headers={"Content-Type": "application/json", **headers}
     )
     try:
         with urllib.request.urlopen(request, timeout=180) as response:
-            return response.status, json.load(response)
+            return response.status, json.load(response), _rate_headers(response.headers)
     except urllib.error.HTTPError as exc:
         raw = exc.read().decode(errors="replace")
         try:
-            return exc.code, json.loads(raw)
+            return exc.code, json.loads(raw), _rate_headers(exc.headers)
         except json.JSONDecodeError:
-            return exc.code, raw
+            return exc.code, raw, _rate_headers(exc.headers)
     except OSError as exc:
-        return 0, f"network error: {exc}"
+        return 0, f"network error: {exc}", {}
 
 
 def _save(name: str, record: dict[str, Any]) -> None:
@@ -174,67 +111,128 @@ def _message(resp: Any) -> dict[str, Any] | None:
     return None
 
 
-def probe(route: Route, key: str) -> dict[str, Any]:
+def _body(route: RouteConfig, messages: list[dict[str, Any]], params: dict[str, Any]) -> Any:
+    return {
+        "model": route.model,
+        "messages": messages,
+        "tools": TOOLS,
+        **params,
+        **route.provider_prefs,
+    }
+
+
+def _tool_messages(route: RouteConfig, calls: list[Any]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for call in calls:
+        if not isinstance(call, dict):
+            continue
+        message: dict[str, Any] = {
+            "role": "tool",
+            "tool_call_id": call.get("id"),
+            "content": json.dumps(TOOL_RESULT),
+        }
+        if route.tool_name_in_tool_msg:
+            function = call.get("function")
+            message["name"] = function.get("name") if isinstance(function, dict) else None
+        out.append(message)
+    return out
+
+
+def probe(route: RouteConfig, key: str | None) -> dict[str, Any]:
     url = f"{route.base_url}/chat/completions"
-    headers = {"Authorization": f"Bearer {key}", **route.extra_headers}
+    headers = {"User-Agent": USER_AGENT, **route.extra_headers}
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": SYSTEM},
         {"role": "user", "content": USER},
     ]
     params = dict(route.params)
-    body = {"model": route.model, "messages": messages, "tools": TOOLS, **params}
-    status, resp = _request("POST", url, headers, body)
-    result: dict[str, Any] = {"round1_status": status}
+    body = _body(route, messages, params)
+    status, resp, rate = _request("POST", url, headers, body)
+    result: dict[str, Any] = {"model": route.model, "round1_status": status}
     if status == 400 and route.droppable:
         _save(
-            f"{route.name}_round1_rejected", {"request": body, "status": status, "response": resp}
+            f"{route.name}_round1_rejected",
+            {"request": body, "status": status, "response": resp, "headers": rate},
         )
         for name in route.droppable:
             params.pop(name, None)
-        body = {"model": route.model, "messages": messages, "tools": TOOLS, **params}
-        status, resp = _request("POST", url, headers, body)
+        body = _body(route, messages, params)
+        status, resp, rate = _request("POST", url, headers, body)
         result.update({"rejected_params": list(route.droppable), "round1_status": status})
-    _save(f"{route.name}_round1", {"request": body, "status": status, "response": resp})
+    _save(
+        f"{route.name}_round1",
+        {"request": body, "status": status, "response": resp, "headers": rate},
+    )
+    result["params_sent"] = params
+    result["rate_limit_headers"] = rate
     message = _message(resp)
     calls = message.get("tool_calls") if message else None
     result["tool_calls"] = len(calls) if isinstance(calls, list) else 0
-    result["usage"] = resp.get("usage") if isinstance(resp, dict) else None
+    result["legacy_function_call"] = bool(message and message.get("function_call"))
+    if isinstance(resp, dict):
+        result["usage"] = resp.get("usage")
+        result["response_model"] = resp.get("model")
+        result["provider_field"] = resp.get("provider")
+        choices = resp.get("choices")
+        if isinstance(choices, list) and choices and isinstance(choices[0], dict):
+            result["finish_reason"] = choices[0].get("finish_reason")
     if message and isinstance(calls, list) and calls:
         echoed = dict(message)  # the assistant turn exactly as received
-        tool_messages = [
-            {"role": "tool", "tool_call_id": c.get("id"), "content": json.dumps(TOOL_RESULT)}
-            for c in calls
-            if isinstance(c, dict)
-        ]
+        tool_messages = _tool_messages(route, calls)
         body2 = dict(body)
         body2["messages"] = [*messages, echoed, *tool_messages]
-        status2, resp2 = _request("POST", url, headers, body2)
-        _save(f"{route.name}_round2", {"request": body2, "status": status2, "response": resp2})
+        status2, resp2, rate2 = _request("POST", url, headers, body2)
+        result["extra_fields_received"] = sorted(set(echoed) - {"role", "content", "tool_calls"})
+        result["harness_echo"] = list(route.echo)
+        if status2 == 400:
+            _save(
+                f"{route.name}_round2_rejected",
+                {"request": body2, "status": status2, "response": resp2, "headers": rate2},
+            )
+            internal = messages_from_wire([message])[0]
+            harness = message_to_wire(internal, echo=frozenset(route.echo))
+            body2["messages"] = [*messages, harness, *tool_messages]
+            status2, resp2, rate2 = _request("POST", url, headers, body2)
+            result["round2_verbatim_rejected"] = True
+        _save(
+            f"{route.name}_round2",
+            {"request": body2, "status": status2, "response": resp2, "headers": rate2},
+        )
         result["round2_status"] = status2
-        result["extra_fields_echoed"] = sorted(set(echoed) - {"role", "content", "tool_calls"})
-    if route.name == "openrouter_haiku" and isinstance(resp, dict) and resp.get("id"):
+    if "openrouter.ai" in route.base_url and isinstance(resp, dict) and resp.get("id"):
         time.sleep(3)
-        g_status, g_resp = _request("GET", f"{route.base_url}/generation?id={resp['id']}", headers)
-        _save("openrouter_generation_lookup", {"status": g_status, "response": g_resp})
+        lookup = f"{route.base_url}/generation?id={resp['id']}"
+        g_status, g_resp, _ = _request("GET", lookup, headers)
+        _save(f"{route.name}_generation_lookup", {"status": g_status, "response": g_resp})
         data = g_resp.get("data") if isinstance(g_resp, dict) else None
         result["served_provider"] = data.get("provider_name") if isinstance(data, dict) else None
     return result
 
 
 def main(argv: list[str]) -> int:
+    routes = load_routes()
     wanted = set(argv)
+    unknown = wanted - set(routes)
+    if unknown:
+        print(f"unknown route(s) {sorted(unknown)}; known: {', '.join(routes)}", file=sys.stderr)
+        return 2
     summary: dict[str, Any] = {"taken_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
-    for route in ROUTES:
-        if wanted and route.name not in wanted:
+    for name, route in routes.items():
+        if wanted and name not in wanted:
             continue
-        key = os.environ.get(route.key_env)
-        if route.name == "ollama_local" and key:
-            key = "ollama"
-        if not key:
-            print(f"skip {route.name}: {route.key_env} not set")
+        if route.key_env is None and name not in wanted and not os.environ.get("OLLAMA_PROBE"):
+            print(f"skip {name}: local route; set OLLAMA_PROBE or name it")
             continue
-        summary[route.name] = probe(route, key)
-        print(route.name, json.dumps(summary[route.name], ensure_ascii=False))
+        try:
+            resolved = resolve_route(route)
+        except MissingKeyError as exc:
+            print(f"skip {name}: {exc.variable} not set")
+            continue
+        key = os.environ.get(route.key_env) if route.key_env else None
+        summary[name] = probe(resolved, key)
+        print(name, json.dumps(summary[name], ensure_ascii=False))
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "SUMMARY.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

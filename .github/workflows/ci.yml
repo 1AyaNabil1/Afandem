@@ -27,7 +27,7 @@ jobs:
       - name: Tests
         run: uv run pytest -q
       - name: Fake run (no keys, no network)
-        run: uv run afandem run --fake
+        run: uv run afandem run --fake --scenarios tests/fixtures/smoke --runs-dir "${{ runner.temp }}/afandem-runs"
   secrets:
     runs-on: ubuntu-latest
     steps:

@@ -17,7 +17,57 @@ How each model is reached, what the harness may send it, and the limits that sha
 
 Judge candidates in the same snapshot (outside the grid): `mistralai/mistral-medium-3-5`, `deepseek/deepseek-v3.2`, `meta-llama/llama-4-maverick`; fallback `openai/gpt-6.1-terra`.
 
-Every request also carries `provider: {order: [pinned], allow_fallbacks: false, require_parameters: true, data_collection: "deny"}` (plus `quantizations: ["bf16"]` for Qwen). Sending an unsupported parameter with `require_parameters: true` returns HTTP 503 "no provider meets routing requirements" — that is why the parameter set is derived per model, and why the probe `or_haiku_temperature` checks it.
+Every request also carries `provider: {order: [pinned], allow_fallbacks: false, require_parameters: true, data_collection: "deny"}` (plus `quantizations: ["bf16"]` for Qwen). Sending an unsupported parameter with `require_parameters: true` returns HTTP 503 "no provider meets routing requirements" — that is why the parameter set is derived per model.
+
+## Routes (`config/routes.json`)
+
+One OpenAI-compatible provider (`src/afandem/providers/http.py`) serves every route; `config/routes.json` is the single source for endpoint, key variable, `params_sent`, provider preferences, echoed fields and limits, read by the harness and by the probe script. `verified` stays false until a route's live probe passes; the probe date is noted below (5 Nov 2026: `gemini_free`, `groq_qwen`, `ollama_cloud`). Labels are `Target.name` (run directories, tables).
+
+| Route | Label | Endpoint (`/chat/completions` appended) | Model | `params_sent` | Paced at | Verified |
+|---|---|---|---|---|---|---|
+| `gemini_free` | `gemini-3.5-flash-lite@aistudio-free` | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-3.5-flash-lite` | `temperature` 0, `max_tokens` 4096, `tool_choice` auto, `reasoning_effort` low | 8 RPM, 250K TPM, 2 concurrent, 60 s timeout | **yes, 5 Nov** |
+| `groq_qwen` | `qwen3.8-27b@groq` | `https://api.groq.com/openai/v1` | `qwen/qwen3.8-27b` | `temperature` 0, `seed` 42, `max_tokens` 4096, `tool_choice` auto, `reasoning_effort` none | 30 RPM, 8K TPM (tokens used, not `max_tokens`), 1 concurrent, 60 s | **yes, 5 Nov** |
+| `nvidia_deepseek` | `deepseek-v4.1-flash@nvidia` | `https://integrate.api.nvidia.com/v1` | `deepseek-ai/deepseek-v4.1-flash` | `temperature` 0, `max_tokens` 4096, `tool_choice` auto (thinking control unknown) | 35 RPM, 2 concurrent, 120 s | no |
+| `cloudflare_qwen` | `qwen3.8-27b@cloudflare` | `https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1` | `@cf/qwen/qwen3.8-27b` | `temperature` 0, `max_tokens` 4096, `tool_choice` auto, `reasoning_effort` low | 60 RPM, 2 concurrent, 60 s; 10,000 neurons/day | no |
+| `fanar_tools` | `fanar-2.0-tools@fanar` | `https://api.fanar.qa/v1` | `Fanar-2.0-Tools` (`FANAR_MODEL` overrides) | `temperature` 0, `max_tokens` 1024, `tool_choice` auto; tool messages carry `name` | 45 RPM, 4 concurrent, 60 s; guard at 7,000 estimated tokens of 8,192 | no |
+| `ollama_local` | `gpt-oss-20b@ollama` | `http://localhost:11434/v1` (no key) | `gpt-oss:20b` (`OLLAMA_MODEL` overrides) | `temperature` 0, `max_tokens` 4096, `reasoning_effort` low; no `tool_choice` | 1 concurrent, 300 s | no |
+| `ollama_cloud` | `gemma4-31b@ollama-cloud` | `https://ollama.com/v1` (`OLLAMA_API_KEY`) | `gemma4:31b-cloud` | `temperature` 0, `max_tokens` 4096, `tool_choice` auto | 1 concurrent, 300 s | **yes, 5 Nov** |
+| `openrouter_haiku` | `claude-haiku-5.5@openrouter` | `https://openrouter.ai/api/v1` | `anthropic/claude-haiku-5.5` | `max_tokens` 4096, `tool_choice` auto, `reasoning` {effort none} | 6 concurrent, 60 s | no |
+| `openrouter_sonnet` | `claude-sonnet-5.5@openrouter` | same | `anthropic/claude-sonnet-5.5` | `max_tokens` 4096, `tool_choice` auto, `reasoning` {effort low} | 6 concurrent, 60 s | no |
+| `openrouter_luna` | `gpt-6-luna@openrouter` | same | `openai/gpt-6-luna` | `max_tokens` 4096, `tool_choice` auto, `seed` 42, `reasoning` {effort none} | 6 concurrent, 60 s | no |
+| `openrouter_qwen` | `qwen3.8-27b@openrouter` | same | `qwen/qwen3.8-27b` | `max_tokens` 4096, `tool_choice` auto, `temperature` 0, `seed` 42, `reasoning` {effort none} | 6 concurrent, 60 s | no |
+| `openrouter_gemini` | `gemini-3.5-flash-lite@openrouter` | same | `google/gemini-3.5-flash-lite` | `max_tokens` 4096, `tool_choice` auto, `temperature` 0, `seed` 42, `reasoning` {effort low} | 6 concurrent, 60 s | no |
+
+- The OpenRouter routes copy `params_sent` from `config/model_params.json` (a test fails if they drift), carry the `provider` object above and an `X-Title: afandem` header, and echo `reasoning_details` back on every assistant turn. They stay unused until funded.
+- Every route echoes an assistant turn's `role`, `content` and each `tool_calls` entry verbatim (Gemini's `extra_content.google.thought_signature` survives); other fields only when listed in the route's `echo`.
+- `--rpm` overrides a route's RPM. Pacing is shared per route within the process: a semaphore of `concurrency`, a minimum interval of 60/RPM between request starts, and, where `tpm` is set, a 60-second token window fed by the chars/3 estimate of each request body.
+- `cloudflare_qwen` sends `reasoning_effort` low while `groq_qwen` sends none (Cloudflare's model page lists low/medium/xhigh), so their rows are labelled apart. `seed` is sent only where the probe script sent it (Groq) or the snapshot allows it (OpenRouter).
+- Free routes record `cost_usd: 0` with `cost_source: free_tier`; OpenRouter's `usage.cost` is recorded with `cost_source: openrouter_usage`. `provider_served` is the body's `provider` when present, else the route name.
+
+## Retry and error policy
+
+Retries are ours (no SDK retries), always with the same model, at most 4 after the first attempt. Backoff is 2 s × 2^(n−1), capped at 60 s, times a jitter factor in [0.5, 1]; a provider hint wins when longer: `Retry-After` (seconds or HTTP-date), Google's `retryDelay`, or a "try again in 1m26.4s" message. A requested wait above 300 s ends the call as `provider_error`. Every retry is logged (`afandem.providers.http`, WARNING) and reported to an optional `on_event` callback. A call counts once against `--budget` however many retries it takes; a cache hit never counts.
+
+| Response | Result | Retried |
+|---|---|---|
+| HTTP 200 with a completion, including `content_filter`/`length` finishes and refusals | the completion (model behaviour, recorded) | no |
+| 429 per-minute rate limit | retry; `provider_error` when retries run out | yes |
+| 429 daily quota: Google `quotaId` containing `PerDay`; Groq "requests/tokens per day" (RPD/TPD); Fanar `exceeded_quota` | `quota` (the runner stops; resume later) | no |
+| 402, or 401/403 naming a key or credit limit (OpenRouter) | `quota` | no |
+| 403 with moderation metadata (`reasons`, `flagged_*`) | `blocked_by_provider` | no |
+| 400 `content_filter` (Fanar's documented filter) | `blocked_by_provider` | no |
+| any other 401/403; 400 "API key not valid" (Google) | `ProviderConfigError`: stops the run, not an outcome | no |
+| 413; 400 `context_length_exceeded` | `context_overflow` | no |
+| 413 from Groq with `rate_limit_exceeded` (one request above the TPM limit) | `provider_error` | no |
+| other 400, 404, 409, 422 | `provider_error` with status and a body excerpt | no |
+| 408, 5xx, timeouts, connection errors | retry; `provider_error` when retries run out | yes |
+| error inside an HTTP 200 with code 429 (not daily) or 5xx | retry | yes |
+| error inside an HTTP 200 otherwise, no `choices`, or a body that is not JSON | `provider_error` (never cached) | no |
+| estimated prompt above the route's guard (Fanar: 7,000 of 8,192) | `context_overflow`, detail `context_cap: …` | never sent |
+
+## Response cache
+
+`cache/responses.sqlite` (git-ignored, WAL, one writer process: `cache/responses.sqlite-lock` holds the writer's PID; a stale lock is recovered, a live one fails loudly). The key hashes the internal request (route, model, messages, tools, `params_sent`, provider preferences, `CACHE_SCHEMA`, salt); the value is the full completion including the raw body. Failures and `finish_reason: error` completions are never stored. `uv run python scripts/export_cache.py export <run_id>` writes one immutable shard per target to `cache/shards/<target>-<run_id>.jsonl.gz` (deterministic gzip; an existing shard is never overwritten); `... import <shard>` loads one back.
 
 ## OpenRouter
 
@@ -42,4 +92,25 @@ Every request also carries `provider: {order: [pinned], allow_fallbacks: false, 
 
 ## Probes
 
-`uv run --env-file .env python scripts/probe_providers.py` writes raw request/response pairs to `tests/fixtures/providers/` and a `SUMMARY.json`. Status: **not yet run (keys pending).**
+`uv run --env-file .env python scripts/probe_providers.py [route ...]` reads its routes from `config/routes.json` and writes raw request/response pairs (with rate-limit headers, without keys) to `tests/fixtures/providers/` and a `SUMMARY.json`. A 400 on round 1 drops the route's `droppable` parameters once; a 400 on the verbatim round-2 echo retries once with the harness echo; both calls are saved. Status: **run 5 Nov 2026** (fixtures committed for `gemini_free`, `groq_qwen`, `ollama_cloud`, and Fanar's 422).
+
+| Route | Result (5 Nov 2026) | What it means |
+|---|---|---|
+| `gemini_free` | Round 1 tool call (Sunday 08/11 17:00 from a Wednesday), round 2 accepted with the verbatim echo; all parameters accepted. One transient 503 on a round 2 in an earlier attempt | **Works.** The thought signature arrives in `tool_calls[].extra_content.google.thought_signature`; no `system_fingerprint`, no `reasoning_tokens` in `usage` |
+| `groq_qwen` | Both rounds OK; `temperature` 0, `seed`, `reasoning_effort` none accepted. First attempt: **403 "error code: 1010"** with Python's default user agent | **Works** with an explicit `User-Agent: afandem/<version>` (now sent by the harness and the probe). Headers: 1,000 requests/day, 8,000 tokens/min counted on tokens used. `system_fingerprint` changes between consecutive calls, so it is not a drift signal (D18) |
+| `ollama_cloud` | `gemma4:31b-cloud`: both rounds OK (tool calls carry an `index` field; echoed verbatim and accepted). `deepseek-v4.1-flash`: **402** "not included in your free usage" | **Works for Gemma 4 31B on the free plan.** DeepSeek and the other large cloud models need Ollama credits |
+| `fanar_tools` | **422 "Model not authorized"**; `GET /v1/models` with the key returns an empty list | The key is valid but no model is enabled on it yet: ask QCRI to enable `Fanar-2.0-Tools` by name |
+| `nvidia_deepseek` | Read timeout (180 s, then 300 s) on the tool call; a one-line request with `max_tokens` 64 also timed out after 120 s for both `deepseek-v4.1-flash` and `gemma-4-31b-it` | The free endpoint did not answer this key on 5 Nov; not a harness problem. Re-probe later |
+| `cloudflare_qwen` | **401**; `GET /client/v4/user/tokens/verify` says "Invalid API Token" | The value in `CLOUDFLARE_API_TOKEN` is not an API token: create one with the Workers AI permission |
+| `ollama_local` | No local Ollama installed | Not used; `ollama_cloud` covers Ollama |
+
+What each probe must confirm before its route is marked `verified`:
+
+- **All:** the parameters are accepted (no `rejected_params`), a tool call comes back, round 2 succeeds; `extra_fields_received` against the route's `echo` list; the rate-limit headers.
+- **`gemini_free`:** the thought signature arrives in `tool_calls[].extra_content` and round 2 is accepted with the verbatim echo; `reasoning_effort` low is accepted; the 429 body shape (list-wrapped, `quotaId`, `retryDelay`).
+- **`groq_qwen`:** `seed` and `reasoning_effort: none` accepted; whether `max_tokens` counts toward the 8K TPM (`x-ratelimit-*` headers) — if it does, a prompt above ~3.9K tokens cannot be sent with `max_tokens` 4096.
+- **`nvidia_deepseek`:** `temperature` 0 and `tool_choice` accepted; whether thinking is on by default and which parameter switches it off.
+- **`cloudflare_qwen`:** tools pass through `/ai/v1`; `reasoning_effort` low accepted (if dropped, the model runs at xhigh).
+- **`fanar_tools`:** access to `Fanar-2.0-Tools`; `function_call` vs `tool_calls`; `name` on tool messages accepted; the `ratelimit-policy` window.
+- **`ollama_local`:** tools and `reasoning_effort` accepted without `tool_choice`.
+- **OpenRouter:** a top-level `provider` field; `reasoning_details` round trip; `usage.cost`.

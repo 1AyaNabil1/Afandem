@@ -190,5 +190,7 @@ def test_cli_data_lint_bad_path(tmp_path: Path, capsys: pytest.CaptureFixture[st
     assert "no such file or directory" in capsys.readouterr().err
 
 
-def test_cli_run_fake_still_works() -> None:
-    assert main(["run", "--fake"]) == 0
+def test_cli_run_fake_still_works(tmp_path: Path) -> None:
+    smoke = Path(__file__).parent / "fixtures" / "smoke"
+    args = ["run", "--fake", "--scenarios", str(smoke), "--runs-dir", str(tmp_path)]
+    assert main([*args, "--columns", "en"]) == 0

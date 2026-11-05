@@ -1,0 +1,99 @@
+{
+  "request": {
+    "model": "gemma4:31b-cloud",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a clinic booking assistant. Today is Wednesday 2026-11-04 (Africa/Cairo). Use the tools to act. Ask when a required detail is missing."
+      },
+      {
+        "role": "user",
+        "content": "Please book me an appointment this Sunday at 5 pm. My name is Mona Mahmoud."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_nk7mf5ba",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "book_appointment",
+              "arguments": "{\"date\":\"2026-11-08\",\"patient_name\":\"Mona Mahmoud\",\"time\":\"17:00\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_nk7mf5ba",
+        "content": "{\"appointment_id\": \"appt_0001\", \"status\": \"booked\"}"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "book_appointment",
+          "description": "Book a clinic appointment.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_name": {
+                "type": "string",
+                "description": "Full name of the patient"
+              },
+              "date": {
+                "type": "string",
+                "description": "ISO date, YYYY-MM-DD"
+              },
+              "time": {
+                "type": "string",
+                "description": "24-hour time, HH:MM"
+              }
+            },
+            "required": [
+              "patient_name",
+              "date",
+              "time"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "temperature": 0,
+    "max_tokens": 4096,
+    "tool_choice": "auto"
+  },
+  "status": 200,
+  "response": {
+    "id": "chatcmpl-95",
+    "object": "chat.completion",
+    "created": 1793879499,
+    "model": "gemma4:31b-cloud",
+    "system_fingerprint": "fp_ollama",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Your appointment has been successfully booked for Sunday, November 8th, 2026, at 5:00 PM. Your appointment ID is appt_0001."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 256,
+      "completion_tokens": 45,
+      "total_tokens": 301,
+      "prompt_tokens_details": {
+        "cached_tokens": 160
+      }
+    }
+  },
+  "headers": {
+    "x-request-id": "257526af-2549-495c-a996-70571d818ea1"
+  }
+}

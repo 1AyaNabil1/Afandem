@@ -26,3 +26,11 @@ One entry per working session: date, hours, what was done, the next three steps.
 - Free tool-calling routes researched and documented (`docs/free-pilot-models.md`); probe script rewritten for them.
 - Sub-budget (a): scenario schema, loader, JSON Schema, 16 lints, `afandem data lint`; clinic and banking sandboxes; canary GUID; `docs/tools.md`. 670 tests; ruff and strict mypy clean. Committed locally, not pushed (IP-clause check pending).
 - **Next three steps:** free API keys + probes; review tool descriptions; author the first 10 clinic scenarios with the authoring tool.
+
+## 2026-11-05 · Phase 1 sub-budget (b) (assistant-run; Aya: API keys)
+- Contract: internal message model and the OpenAI-compatible converter (`providers/base.py`, `providers/wire.py`).
+- Providers: HTTP provider with retries, outcome mapping and per-route pacing; `config/routes.json` (free routes + paid OpenRouter); SQLite response cache, immutable shard export; probe script reads the routes.
+- Run machinery: agent loop with follow-up rule v1, FakeModel oracle + overrides, scorer v0 (end state), trace writer (`--resume`, `--retry-errors`, `--budget`), runner, `afandem run | show | summary`; real routes wired with per-repeat cache salts.
+- Live probes (keys from Aya): Gemini free, Groq Qwen, Ollama Cloud Gemma 4 work; Fanar model not enabled; NVIDIA timed out; Cloudflare token invalid. Groq needed an explicit user agent. End-to-end live run on Groq through the CLI OK.
+- 1,084 tests; ruff and strict mypy clean. Committed locally, not pushed (IP clause pending).
+- **Next three steps:** Aya writes `config/prompts/` and the first 10 clinic scenarios; week-3 number on Gemini + Qwen (EGY + EN, hand-scored); sub-budget (c) normalisers and metrics.

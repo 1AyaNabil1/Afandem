@@ -1,0 +1,107 @@
+{
+  "taken_at": "2026-11-05T13:51:19+0200",
+  "gemini_free": {
+    "model": "gemini-3.5-flash-lite",
+    "round1_status": 200,
+    "params_sent": {
+      "temperature": 0,
+      "max_tokens": 4096,
+      "tool_choice": "auto",
+      "reasoning_effort": "low"
+    },
+    "rate_limit_headers": {},
+    "tool_calls": 1,
+    "legacy_function_call": false,
+    "usage": {
+      "completion_tokens": 14,
+      "prompt_tokens": 169,
+      "total_tokens": 183
+    },
+    "response_model": "gemini-3.5-flash-lite",
+    "provider_field": null,
+    "finish_reason": "tool_calls",
+    "extra_fields_received": [],
+    "harness_echo": [],
+    "round2_status": 200
+  },
+  "groq_qwen": {
+    "model": "qwen/qwen3.8-27b",
+    "round1_status": 200,
+    "params_sent": {
+      "temperature": 0,
+      "seed": 42,
+      "max_tokens": 4096,
+      "tool_choice": "auto",
+      "reasoning_effort": "none"
+    },
+    "rate_limit_headers": {
+      "x-ratelimit-limit-requests": "1000",
+      "x-ratelimit-limit-tokens": "8000",
+      "x-ratelimit-remaining-requests": "996",
+      "x-ratelimit-remaining-tokens": "7540",
+      "x-ratelimit-reset-requests": "5m45.6s",
+      "x-ratelimit-reset-tokens": "3.45s",
+      "x-request-id": "req_01m6nrsnk1e7zt4bvdcw3nvfgf"
+    },
+    "tool_calls": 1,
+    "legacy_function_call": false,
+    "usage": {
+      "queue_time": 0.02284456,
+      "prompt_tokens": 394,
+      "prompt_time": 0.029065668,
+      "completion_tokens": 66,
+      "completion_time": 0.2192626,
+      "total_tokens": 460,
+      "total_time": 0.248328268
+    },
+    "response_model": "qwen/qwen3.8-27b",
+    "provider_field": null,
+    "finish_reason": "tool_calls",
+    "extra_fields_received": [],
+    "harness_echo": [],
+    "round2_status": 200
+  },
+  "fanar_tools": {
+    "model": "Fanar-2.0-Tools",
+    "round1_status": 422,
+    "params_sent": {
+      "temperature": 0,
+      "max_tokens": 1024,
+      "tool_choice": "auto"
+    },
+    "rate_limit_headers": {},
+    "tool_calls": 0,
+    "legacy_function_call": false,
+    "usage": null,
+    "response_model": null,
+    "provider_field": null
+  },
+  "ollama_cloud": {
+    "model": "gemma4:31b-cloud",
+    "round1_status": 200,
+    "params_sent": {
+      "temperature": 0,
+      "max_tokens": 4096,
+      "tool_choice": "auto"
+    },
+    "rate_limit_headers": {
+      "x-request-id": "9a50a094-8334-4c1e-99a3-d0e89ac2d992"
+    },
+    "tool_calls": 1,
+    "legacy_function_call": false,
+    "usage": {
+      "prompt_tokens": 185,
+      "completion_tokens": 44,
+      "total_tokens": 229,
+      "prompt_tokens_details": {
+        "cached_tokens": 160
+      }
+    },
+    "response_model": "gemma4:31b-cloud",
+    "provider_field": null,
+    "finish_reason": "tool_calls",
+    "extra_fields_received": [],
+    "harness_echo": [],
+    "round2_status": 200
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "request": {
+    "model": "qwen/qwen3.8-27b",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a clinic booking assistant. Today is Wednesday 2026-11-04 (Africa/Cairo). Use the tools to act. Ask when a required detail is missing."
+      },
+      {
+        "role": "user",
+        "content": "Please book me an appointment this Sunday at 5 pm. My name is Mona Mahmoud."
+      },
+      {
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "id": "r0ywej9s7",
+            "type": "function",
+            "function": {
+              "name": "book_appointment",
+              "arguments": "{\"date\":\"2026-11-08\",\"patient_name\":\"Mona Mahmoud\",\"time\":\"17:00\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "r0ywej9s7",
+        "content": "{\"appointment_id\": \"appt_0001\", \"status\": \"booked\"}"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "book_appointment",
+          "description": "Book a clinic appointment.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_name": {
+                "type": "string",
+                "description": "Full name of the patient"
+              },
+              "date": {
+                "type": "string",
+                "description": "ISO date, YYYY-MM-DD"
+              },
+              "time": {
+                "type": "string",
+                "description": "24-hour time, HH:MM"
+              }
+            },
+            "required": [
+              "patient_name",
+              "date",
+              "time"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "temperature": 0,
+    "seed": 42,
+    "max_tokens": 4096,
+    "tool_choice": "auto",
+    "reasoning_effort": "none"
+  },
+  "status": 200,
+  "response": {
+    "id": "chatcmpl-c01232df-45a8-4863-9546-8640abed0ca0",
+    "object": "chat.completion",
+    "created": 1793879497,
+    "model": "qwen/qwen3.8-27b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Your appointment is booked for Sunday, November 8, 2026 at 5:00 PM."
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.475776134,
+      "prompt_tokens": 497,
+      "prompt_time": 0.044565441,
+      "completion_tokens": 25,
+      "completion_time": 0.051427858,
+      "total_tokens": 522,
+      "total_time": 0.095993299
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_43dd1ea4ee",
+    "x_groq": {
+      "id": "req_01m6nrsp3meqa9s5jgynh5ckv7",
+      "seed": 42
+    },
+    "service_tier": "on_demand"
+  },
+  "headers": {
+    "x-ratelimit-limit-requests": "1000",
+    "x-ratelimit-limit-tokens": "8000",
+    "x-ratelimit-remaining-requests": "995",
+    "x-ratelimit-remaining-tokens": "7046",
+    "x-ratelimit-reset-requests": "7m12s",
+    "x-ratelimit-reset-tokens": "7.439s",
+    "x-request-id": "req_01m6nrsp3meqa9s5jgynh5ckv7"
+  }
+}

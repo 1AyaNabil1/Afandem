@@ -1,0 +1,104 @@
+{
+  "request": {
+    "model": "qwen/qwen3.8-27b",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a clinic booking assistant. Today is Wednesday 2026-11-04 (Africa/Cairo). Use the tools to act. Ask when a required detail is missing."
+      },
+      {
+        "role": "user",
+        "content": "Please book me an appointment this Sunday at 5 pm. My name is Mona Mahmoud."
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "book_appointment",
+          "description": "Book a clinic appointment.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_name": {
+                "type": "string",
+                "description": "Full name of the patient"
+              },
+              "date": {
+                "type": "string",
+                "description": "ISO date, YYYY-MM-DD"
+              },
+              "time": {
+                "type": "string",
+                "description": "24-hour time, HH:MM"
+              }
+            },
+            "required": [
+              "patient_name",
+              "date",
+              "time"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "temperature": 0,
+    "seed": 42,
+    "max_tokens": 4096,
+    "tool_choice": "auto",
+    "reasoning_effort": "none"
+  },
+  "status": 200,
+  "response": {
+    "id": "chatcmpl-e208952d-d7f4-419f-a063-34ec0b0f3643",
+    "object": "chat.completion",
+    "created": 1793879496,
+    "model": "qwen/qwen3.8-27b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "r0ywej9s7",
+              "type": "function",
+              "function": {
+                "name": "book_appointment",
+                "arguments": "{\"date\":\"2026-11-08\",\"patient_name\":\"Mona Mahmoud\",\"time\":\"17:00\"}"
+              }
+            }
+          ]
+        },
+        "logprobs": null,
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.02284456,
+      "prompt_tokens": 394,
+      "prompt_time": 0.029065668,
+      "completion_tokens": 66,
+      "completion_time": 0.2192626,
+      "total_tokens": 460,
+      "total_time": 0.248328268
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_8999620a6e",
+    "x_groq": {
+      "id": "req_01m6nrsnk1e7zt4bvdcw3nvfgf",
+      "seed": 42
+    },
+    "service_tier": "on_demand"
+  },
+  "headers": {
+    "x-ratelimit-limit-requests": "1000",
+    "x-ratelimit-limit-tokens": "8000",
+    "x-ratelimit-remaining-requests": "996",
+    "x-ratelimit-remaining-tokens": "7540",
+    "x-ratelimit-reset-requests": "5m45.6s",
+    "x-ratelimit-reset-tokens": "3.45s",
+    "x-request-id": "req_01m6nrsnk1e7zt4bvdcw3nvfgf"
+  }
+}
