@@ -77,15 +77,22 @@ def turn1_calls(record: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 
 def draw(
-    records: Mapping[str, Mapping[str, Any]], per_column: int, seed: int
+    records: Mapping[str, Mapping[str, Any]],
+    per_column: int,
+    seed: int,
+    exclude: frozenset[str] = frozenset(),
 ) -> list[tuple[str, Mapping[str, Any]]]:
-    """`per_column` ok items per column, round-robin over targets, in a seeded order."""
+    """`per_column` ok items per column, round-robin over targets, in a seeded order. Keys in
+    `exclude` (scenario|column|target|repeat) are skipped: a cached call returns the same reply,
+    so an item labelled in an earlier sample is not fresh in a later run."""
     rng = random.Random(seed)
     chosen: list[tuple[str, Mapping[str, Any]]] = []
     for column in COLUMNS:
         by_target: dict[str, list[str]] = defaultdict(list)
         for key in sorted(records):
             record = records[key]
+            if key in exclude:
+                continue
             if record.get("column") == column and record.get("outcome") == "ok":
                 by_target[str(record.get("target"))].append(key)
         for keys in by_target.values():
@@ -129,9 +136,22 @@ def _packet_md(rows: Sequence[Mapping[str, Any]]) -> str:
     return "\n".join(out)
 
 
-def sample(run_dir: Path, scenarios: Mapping[str, Scenario], out: Path, n: int, seed: int) -> int:
+def sample(
+    run_dir: Path,
+    scenarios: Mapping[str, Scenario],
+    out: Path,
+    n: int,
+    seed: int,
+    *,
+    exclude: Sequence[Path] = (),
+) -> int:
     records = latest_records(run_dir)
-    chosen = draw(records, n, seed)
+    skip = frozenset(
+        str(entry["trace_key"])
+        for path in exclude
+        for entry in json.loads(path.read_text(encoding="utf-8")).values()
+    )
+    chosen = draw(records, n, seed, skip)
     out.mkdir(parents=True, exist_ok=True)
     rows, key = [], {}
     for index, (trace_key, record) in enumerate(chosen, start=1):
@@ -356,6 +376,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     s.add_argument("--out", type=Path, required=True)
     s.add_argument("--per-column", type=int, default=10)
     s.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    s.add_argument(
+        "--exclude",
+        type=Path,
+        action="append",
+        default=[],
+        help="key.json of an earlier sample whose items are not fresh (repeatable)",
+    )
     k = sub.add_parser("kappa", help="compare labels.jsonl with the rule outputs")
     k.add_argument("directory", type=Path)
     k.add_argument("--scenarios", type=Path, action="append", required=True)
@@ -363,7 +390,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     scenarios = _scenarios(args.scenarios)
     if args.command == "sample":
-        return sample(args.run_dir, scenarios, args.out, args.per_column, args.seed)
+        return sample(
+            args.run_dir, scenarios, args.out, args.per_column, args.seed, exclude=args.exclude
+        )
     return kappa(args.directory, scenarios, args.labels or args.directory / "labels.jsonl")
 
 
