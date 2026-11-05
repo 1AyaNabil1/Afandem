@@ -4,7 +4,8 @@ The tool is plain browser JavaScript. These tests read its schema constants bloc
 Node.js is installed, run its model (tools/author/model.js) on the fixture scenario: the page
 must write files the loader accepts, round-trip a valid file byte for byte, and reject what the
 pydantic model rejects. They also guard the authoring rules: the tool ships no Arabic-script
-text, no network reference, and never relabels provenance.
+text, no network reference, and never relabels provenance (an assistant draft stays one, through
+edits and page reloads, until the author's explicit approve action for that column).
 """
 
 import copy
@@ -50,6 +51,7 @@ from afandem.scenarios.schema import (
     HarmType,
     Insertion,
     Now,
+    Provenance,
     Register,
     Scenario,
     ToolCall,
@@ -90,6 +92,30 @@ function run(job) {
     if (job.op === "measure") {
       return { ok: true, words: job.texts.map(model.countWords),
                chars: job.texts.map(model.countChars) };
+    }
+    if (job.op === "edit") {
+      // Open a file, then replay what the page does: type, approve, undo, reload the page.
+      let draft = model.fromDocument(job.doc, "2026-11-05").draft;
+      const undone = [];
+      for (const step of job.steps) {
+        if (step.type) {
+          const [target, field, value] = step.type;
+          const block = target === "arabizi_variant" ? draft.arabiziVariant : draft.texts[target];
+          block[field] = value;
+        }
+        if (step.approve) model.approve(draft, step.approve);
+        if (step.undo) undone.push(model.undoApproval(draft, step.undo));
+        if (step.reload) draft = model.reviveDraft(JSON.parse(JSON.stringify(draft)));
+      }
+      const report = model.validate(draft, {});
+      return { ok: true, text: model.stringify(report.doc), drafts: model.assistantDrafts(draft),
+               errors: report.errors, hints: report.hints, undone: undone,
+               stored: JSON.parse(JSON.stringify(draft)) };
+    }
+    if (job.op === "revive") {
+      const draft = model.reviveDraft(job.stored);
+      return { ok: true, revived: draft !== null,
+               text: draft === null ? null : model.stringify(model.toDocument(draft).doc) };
     }
     if (job.op === "now") return { ok: true, info: model.nowInfo(job.local, job.offset) };
     if (job.op === "json") return { ok: true, result: model.parseJsonText(job.text) };
@@ -167,7 +193,8 @@ def test_enums_match_the_schema() -> None:
     assert c["latin_arabizi_columns"] == list(LATIN_ARABIZI_COLUMNS)
     assert c["cs_columns"] == list(CS_COLUMNS)
     assert c["reply_language"] == "user"
-    assert c["provenance"] == "hand"
+    assert c["provenances"] == list(get_args(Provenance))
+    assert c["provenance"] == "hand"  # what every column of a new scenario carries
 
 
 def test_domain_tools_match_the_schema_and_the_sandboxes() -> None:
@@ -272,8 +299,13 @@ def test_a_new_scenario_starts_with_no_text(tmp_path: Path) -> None:
         assert block["text"] == block["follow_up"] == block["confirm_yes"] == ""
         assert block.get("insertions", []) == []
         assert block["natural"] is None
-        assert doc["texts"][column]["provenance"] == "hand"
-    assert draft["arabiziVariant"] == {"enabled": False, "text": ""}
+        assert block["provenance"] == doc["texts"][column]["provenance"] == "hand"
+    assert draft["arabiziVariant"] == {
+        "enabled": False,
+        "text": "",
+        "provenance": "hand",
+        "openedAs": None,
+    }
     assert [entry["note"] for entry in draft["meta"]["changelog"]] == [""]
     assert [row["value"] for row in draft["slots"]] == [""]
     assert draft["canary"] == ""
@@ -420,15 +452,176 @@ def test_the_page_accepts_what_the_schema_accepts(tmp_path: Path) -> None:
         Scenario.model_validate(json.loads(result["text"]))
 
 
+# ------------------------------------------------------------------ provenance
+
+DRAFT = "assistant_draft"
+VARIANT = "arabizi_variant"
+TARGETS = [*COLUMNS, VARIANT]
+
+
+def provenance_block(doc: dict[str, Any], target: str) -> dict[str, Any]:
+    block: dict[str, Any] = doc[VARIANT] if target == VARIANT else doc["texts"][target]
+    return block
+
+
+def drafted(*targets: str) -> dict[str, Any]:
+    """The fixture with these columns (or the variant) marked as drafted by the assistant."""
+    doc = fixture_document()
+    for target in targets:
+        provenance_block(doc, target)["provenance"] = DRAFT
+    return doc
+
+
+def provenances(doc: dict[str, Any]) -> dict[str, str]:
+    return {target: provenance_block(doc, target)["provenance"] for target in TARGETS}
+
+
+@needs_node
+@pytest.mark.parametrize(
+    "targets", [TARGETS, ["egy", "en", VARIANT], ["msa"]], ids=["all", "mixed", "one"]
+)
+def test_a_draft_file_round_trips_byte_for_byte(tmp_path: Path, targets: list[str]) -> None:
+    doc = drafted(*targets)
+    Scenario.model_validate(doc)
+    loaded, reloaded = run_model(
+        [{"op": "load", "doc": doc}, {"op": "edit", "doc": doc, "steps": [{"reload": True}]}],
+        tmp_path,
+    )
+    assert loaded["ok"], loaded
+    assert loaded["warnings"] == []
+    assert loaded["errors"] == [], "an assistant draft passes the schema"
+    assert loaded["text"] == dumps(doc)
+    assert reloaded["text"] == dumps(doc), "a page reload must keep the drafts"
+    assert sorted(reloaded["drafts"]) == sorted(targets)
+    flagged = [hint for hint in loaded["hints"] if hint["kind"] == "provenance"]
+    assert len(flagged) == len(targets), "each draft is flagged, as the lint does"
+    assert [hint for hint in loaded["hints"] if hint["kind"] != "provenance"] == []
+
+
+@needs_node
+def test_editing_a_draft_column_keeps_it_a_draft(tmp_path: Path) -> None:
+    doc = drafted("egy", "en", VARIANT)
+    texts = doc["texts"]
+    # The edits rearrange the fixture's own (author-written) texts.
+    egy = texts["egy"]["confirm_yes"]
+    en = texts["en"]["text"] + " " + texts["en"]["confirm_yes"]
+    variant = doc[VARIANT]["text"] + " " + texts["arabizi"]["confirm_yes"]
+    steps = [
+        {"type": ["egy", "text", ""]},
+        {"type": ["egy", "text", egy]},
+        {"type": ["en", "text", en]},
+        {"reload": True},
+        {"type": [VARIANT, "text", variant]},
+    ]
+    [result] = run_model([{"op": "edit", "doc": doc, "steps": steps}], tmp_path)
+    assert result["ok"], result
+    expected = copy.deepcopy(doc)
+    expected["texts"]["egy"]["text"] = egy
+    expected["texts"]["en"]["text"] = en
+    expected[VARIANT]["text"] = variant
+    assert result["text"] == dumps(expected)
+    saved = json.loads(result["text"])
+    assert provenances(saved) == {
+        t: DRAFT if t in ("egy", "en", VARIANT) else "hand" for t in TARGETS
+    }
+    Scenario.model_validate(saved)
+
+
+@needs_node
+def test_approving_flips_only_that_column(tmp_path: Path) -> None:
+    doc = drafted(*TARGETS)
+    jobs = [{"op": "edit", "doc": doc, "steps": [{"approve": target}]} for target in TARGETS]
+    for target, result in zip(TARGETS, run_model(jobs, tmp_path), strict=True):
+        assert result["ok"], result
+        expected = copy.deepcopy(doc)
+        provenance_block(expected, target)["provenance"] = "hand"
+        assert result["text"] == dumps(expected), target
+        assert sorted(result["drafts"]) == sorted(t for t in TARGETS if t != target)
+
+
+@needs_node
+def test_an_approval_can_be_undone_only_for_a_drafted_column(tmp_path: Path) -> None:
+    doc = drafted("cs")
+    steps = [{"approve": "cs"}, {"reload": True}, {"undo": "cs"}, {"undo": "egy"}]
+    hand = fixture_document()
+    undone, untouched = run_model(
+        [
+            {"op": "edit", "doc": doc, "steps": steps},
+            {"op": "edit", "doc": hand, "steps": [{"undo": "cs"}]},
+        ],
+        tmp_path,
+    )
+    assert undone["undone"] == [True, False]
+    assert undone["text"] == dumps(doc)
+    assert untouched["undone"] == [False]
+    assert untouched["text"] == dumps(hand)
+
+
+def _drop(path: str) -> Callable[[dict[str, Any]], None]:
+    def change(doc: dict[str, Any]) -> None:
+        *parents, last = path.split(".")
+        target: Any = doc
+        for key in parents:
+            target = target[key]
+        del target[last]
+
+    return change
+
+
+UNKNOWN_PROVENANCE: list[Any] = ["llm", None, "Hand", "", "assistant-draft", "hand "]
+
+
 @needs_node
 def test_provenance_is_never_relabelled(tmp_path: Path) -> None:
+    """Unknown provenance values are refused, never rewritten as hand or assistant_draft."""
     base = fixture_document()
-    not_hand = _mutate(base, _set("texts.en.provenance", "llm"))
-    variant = _mutate(base, _set("arabizi_variant.provenance", "llm"))
-    results = run_model([{"op": "load", "doc": not_hand}, {"op": "load", "doc": variant}], tmp_path)
-    for result in results:
-        assert not result["ok"]
+    docs = [
+        _mutate(base, _set(f"{where}.provenance", value))
+        for value in UNKNOWN_PROVENANCE
+        for where in ("texts.en", VARIANT)
+    ]
+    docs.append(_mutate(base, _drop("texts.cs.provenance")))
+    docs.append(
+        _mutate(
+            base,
+            _all(
+                _set("texts.cs.text", ""),
+                _set("texts.cs.confirm_yes", ""),
+                _set("texts.cs.provenance", "llm"),
+            ),
+        )
+    )
+    results = run_model([{"op": "load", "doc": doc} for doc in docs], tmp_path)
+    for doc, result in zip(docs, results, strict=True):
+        with pytest.raises(ValidationError):
+            Scenario.model_validate(doc)
+        assert not result["ok"], result
         assert "hand-written" in result["error"]
+
+
+@needs_node
+def test_a_stored_draft_never_relabels(tmp_path: Path) -> None:
+    """The page keeps its draft in localStorage; reviving it must not change provenance."""
+    doc = drafted("egy", VARIANT)
+    hand = fixture_document()
+    drafted_store, hand_store = (
+        result["stored"]
+        for result in run_model(
+            [{"op": "edit", "doc": d, "steps": []} for d in (doc, hand)], tmp_path
+        )
+    )
+    unreadable = copy.deepcopy(drafted_store)
+    unreadable["texts"]["egy"]["provenance"] = "llm"
+    # A draft stored before provenance was kept per column could only hold hand-written text.
+    legacy = copy.deepcopy(hand_store)
+    for block in [*legacy["texts"].values(), legacy["arabiziVariant"]]:
+        del block["provenance"], block["openedAs"]
+    kept, refused, old = run_model(
+        [{"op": "revive", "stored": s} for s in (drafted_store, unreadable, legacy)], tmp_path
+    )
+    assert kept["text"] == dumps(doc)
+    assert refused["revived"] is False
+    assert old["text"] == dumps(hand)
 
 
 @needs_node

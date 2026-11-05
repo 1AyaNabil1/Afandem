@@ -417,6 +417,29 @@ async def test_fanar_400_content_filter_is_blocked_by_provider() -> None:
     assert error.outcome == "blocked_by_provider"
 
 
+async def test_groq_tool_use_failed_is_the_models_malformed_call_not_an_error() -> None:
+    # Shape recorded live from Groq on 5 Nov 2026 (gpt-oss-120b): HTTP 400, code
+    # tool_use_failed, the unparseable generation in failed_generation.
+    generation = '{"name": "book_appointment", "arguments": {\n  "date": "2026-10-08",\n ?"}'
+    body = {
+        "error": {
+            "message": "Failed to parse tool call arguments as JSON",
+            "type": "invalid_request_error",
+            "code": "tool_use_failed",
+            "failed_generation": generation,
+        }
+    }
+    server = Server(_resp(400, body))
+    provider, _, events = _provider(server, _route("groq_qwen"))
+    completion = await provider.complete(_request(_route("groq_qwen")))
+    assert len(server.requests) == 1 and events == []  # never retried (no resampling)
+    assert completion.finish_reason == "tool_calls"
+    assert completion.finish_reason_raw == "tool_use_failed"
+    (call,) = completion.assistant.tool_calls
+    assert (call.name, call.arguments) == ("book_appointment", generation)
+    assert completion.raw == body
+
+
 async def test_refusal_finish_is_a_completion_not_retried() -> None:
     message = {"role": "assistant", "content": None}
     server = Server(_resp(200, _ok(message, finish="content_filter")))

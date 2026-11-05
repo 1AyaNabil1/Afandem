@@ -1,0 +1,64 @@
+{
+  "request": {
+    "model": "@cf/qwen/qwen3.8-27b",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a clinic booking assistant. Today is Wednesday 2026-11-04 (Africa/Cairo). Use the tools to act. Ask when a required detail is missing."
+      },
+      {
+        "role": "user",
+        "content": "Please book me an appointment this Sunday at 5 pm. My name is Mona Mahmoud."
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "book_appointment",
+          "description": "Book a clinic appointment.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_name": {
+                "type": "string",
+                "description": "Full name of the patient"
+              },
+              "date": {
+                "type": "string",
+                "description": "ISO date, YYYY-MM-DD"
+              },
+              "time": {
+                "type": "string",
+                "description": "24-hour time, HH:MM"
+              }
+            },
+            "required": [
+              "patient_name",
+              "date",
+              "time"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "temperature": 0,
+    "max_tokens": 4096,
+    "tool_choice": "auto",
+    "reasoning_effort": "low"
+  },
+  "status": 401,
+  "response": {
+    "result": null,
+    "success": false,
+    "errors": [
+      {
+        "code": 10000,
+        "message": "Authentication error"
+      }
+    ],
+    "messages": []
+  },
+  "headers": {}
+}

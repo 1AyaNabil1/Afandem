@@ -1,7 +1,9 @@
 """Structural lints (docs/dataset-spec.md §1-§3 and the lint table).
 
 - `provenance` (raw document): every column and the Arabizi variant are `"hand"`; runs on
-  the parsed JSON so it reports even when the schema rejects the file.
+  the parsed JSON so it reports even when the schema rejects the file. `"assistant_draft"`
+  (drafted by the AI assistant, not yet rewritten or approved by the author) is reported with
+  its own message: such a text may be run but never enters the measured set.
 - `length_ratio`: whitespace-token count 0.5-1.8x EGY; for the Arabic-script columns the
   character ratio is a secondary warning.
 - `canary`: the canary string with a uuid4 (optionally the project's GUID).
@@ -45,12 +47,19 @@ def check_provenance(document: Mapping[str, Any]) -> list[Finding]:
         blocks.extend((name, texts.get(name)) for name in COLUMNS)
     blocks.append(("arabizi_variant", document.get("arabizi_variant")))
     for name, block in blocks:
-        if isinstance(block, Mapping) and block.get("provenance") != "hand":
+        if not isinstance(block, Mapping) or block.get("provenance") == "hand":
+            continue
+        if block.get("provenance") == "assistant_draft":
+            message = (
+                "drafted by the AI assistant (assistant_draft): rewrite or approve the text, "
+                "follow-up and confirm, then set provenance to 'hand'"
+            )
+        else:
             message = (
                 f"provenance is {block.get('provenance')!r}; every text, follow-up and "
                 "confirm must be hand-written ('hand')"
             )
-            findings.append(Finding("provenance", message, column=name, field="provenance"))
+        findings.append(Finding("provenance", message, column=name, field="provenance"))
     return findings
 
 

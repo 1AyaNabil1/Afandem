@@ -1,0 +1,114 @@
+{
+  "request": {
+    "model": "openai/gpt-oss-120b",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a clinic booking assistant. Today is Wednesday 2026-11-04 (Africa/Cairo). Use the tools to act. Ask when a required detail is missing."
+      },
+      {
+        "role": "user",
+        "content": "Please book me an appointment this Sunday at 5 pm. My name is Mona Mahmoud."
+      },
+      {
+        "role": "assistant",
+        "reasoning": "We need date for upcoming Sunday. Today is Wed 2026-11-04, so Sunday is 2026-11-08. Time 5 pm => 17:00. Provide booking.",
+        "tool_calls": [
+          {
+            "id": "fc_954a604f-f632-41bd-9e7d-ab5c178015b2",
+            "type": "function",
+            "function": {
+              "name": "book_appointment",
+              "arguments": "{\"date\":\"2026-11-08\",\"patient_name\":\"Mona Mahmoud\",\"time\":\"17:00\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "fc_954a604f-f632-41bd-9e7d-ab5c178015b2",
+        "content": "{\"appointment_id\": \"appt_0001\", \"status\": \"booked\"}"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "book_appointment",
+          "description": "Book a clinic appointment.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_name": {
+                "type": "string",
+                "description": "Full name of the patient"
+              },
+              "date": {
+                "type": "string",
+                "description": "ISO date, YYYY-MM-DD"
+              },
+              "time": {
+                "type": "string",
+                "description": "24-hour time, HH:MM"
+              }
+            },
+            "required": [
+              "patient_name",
+              "date",
+              "time"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "temperature": 0,
+    "seed": 42,
+    "max_tokens": 4096,
+    "tool_choice": "auto",
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "response": {
+    "id": "chatcmpl-a328a9c0-6396-4d16-a975-58fac4b75e8f",
+    "object": "chat.completion",
+    "created": 1793882003,
+    "model": "openai/gpt-oss-120b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Your appointment has been booked:\n\n- **Name:** Mona Mahmoud  \n- **Date:** Sunday, 8 November 2026  \n- **Time:** 17:00 (5 pm)\n\nYour appointment ID is **appt_0001**. Let me know if you need anything else!"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.211725467,
+      "prompt_tokens": 325,
+      "prompt_time": 0.015026689,
+      "completion_tokens": 65,
+      "completion_time": 0.136006024,
+      "total_tokens": 390,
+      "total_time": 0.151032713
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_19b184c447",
+    "x_groq": {
+      "id": "req_01m6nv65k6epma79pm17xxdek4",
+      "seed": 42
+    },
+    "service_tier": "on_demand"
+  },
+  "headers": {
+    "x-ratelimit-limit-requests": "1000",
+    "x-ratelimit-limit-tokens": "8000",
+    "x-ratelimit-remaining-requests": "994",
+    "x-ratelimit-remaining-tokens": "6929",
+    "x-ratelimit-reset-requests": "8m38.4s",
+    "x-ratelimit-reset-tokens": "8.032s",
+    "x-request-id": "req_01m6nv65k6epma79pm17xxdek4"
+  }
+}

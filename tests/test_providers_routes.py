@@ -21,7 +21,14 @@ from afandem.providers.routes import (
 )
 
 MODEL_PARAMS = DEFAULT_ROUTES_PATH.parent / "model_params.json"
-FREE = ["gemini_free", "groq_qwen", "nvidia_deepseek", "cloudflare_qwen", "fanar_tools"]
+FREE = [
+    "gemini_free",
+    "groq_qwen",
+    "groq_gptoss",
+    "nvidia_deepseek",
+    "cloudflare_qwen",
+    "fanar_tools",
+]
 EXPECTED = [
     *FREE,
     "ollama_local",
@@ -59,7 +66,12 @@ def test_every_route_is_defined_and_unverified(routes: dict[str, RouteConfig]) -
     assert list(routes) == EXPECTED
     assert route_names() == EXPECTED
     verified = {name for name, route in routes.items() if route.verified}
-    assert verified == {"gemini_free", "groq_qwen", "ollama_cloud"}  # live probes, 5 Nov 2026
+    assert verified == {
+        "gemini_free",
+        "groq_qwen",
+        "groq_gptoss",
+        "ollama_cloud",
+    }  # live probes, 5 Nov 2026
     labels = [route.label for route in routes.values()]
     assert len(set(labels)) == len(labels)
     assert {name for name, route in routes.items() if route.free} == {

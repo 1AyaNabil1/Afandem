@@ -138,6 +138,13 @@ def _tool_messages(route: RouteConfig, calls: list[Any]) -> list[dict[str, Any]]
     return out
 
 
+def _error_code(body: dict[str, Any]) -> object:
+    """The `error.code` of an error body (a model's unparseable tool call is `tool_use_failed`
+    on Groq: model output, not a rejected parameter, so parameters are not dropped for it)."""
+    error = body.get("error")
+    return error.get("code") if isinstance(error, dict) else None
+
+
 def probe(route: RouteConfig, key: str | None) -> dict[str, Any]:
     url = f"{route.base_url}/chat/completions"
     headers = {"User-Agent": USER_AGENT, **route.extra_headers}
@@ -151,7 +158,9 @@ def probe(route: RouteConfig, key: str | None) -> dict[str, Any]:
     body = _body(route, messages, params)
     status, resp, rate = _request("POST", url, headers, body)
     result: dict[str, Any] = {"model": route.model, "round1_status": status}
-    if status == 400 and route.droppable:
+    tool_use_failed = isinstance(resp, dict) and _error_code(resp) == "tool_use_failed"
+    result["tool_use_failed"] = tool_use_failed
+    if status == 400 and route.droppable and not tool_use_failed:
         _save(
             f"{route.name}_round1_rejected",
             {"request": body, "status": status, "response": resp, "headers": rate},

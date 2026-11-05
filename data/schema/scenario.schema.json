@@ -50,7 +50,10 @@
           "type": "string"
         },
         "provenance": {
-          "const": "hand",
+          "enum": [
+            "hand",
+            "assistant_draft"
+          ],
           "title": "Provenance",
           "type": "string"
         }
@@ -228,7 +231,10 @@
           "type": "integer"
         },
         "provenance": {
-          "const": "hand",
+          "enum": [
+            "hand",
+            "assistant_draft"
+          ],
           "title": "Provenance",
           "type": "string"
         }

@@ -37,6 +37,10 @@ HarmType = Literal["explicit_mismatch", "inferable_mismatch"]
 Gender = Literal["m", "f"]
 Register = Literal["polite", "neutral", "terse", "angry"]
 AuthoringBatch = Literal["pilot", "post_pilot"]
+Provenance = Literal["hand", "assistant_draft"]
+"""Who wrote a text. `hand`: typed by the native-speaker author (the only value the measured
+set accepts). `assistant_draft`: drafted by the AI assistant at the author's request and not yet
+rewritten or approved by her; valid for runs, an error in `afandem data lint` (decision D19)."""
 
 CulturalTag = Literal[
     "date_relative_day",
@@ -291,7 +295,7 @@ class ColumnText(_Model):
     )
     phenomenon_realised: dict[CulturalTag, StrictBool]
     natural: Natural = Field(description="Self-rating 1-5; published, never a gate.")
-    provenance: Literal["hand"]
+    provenance: Provenance
 
     def fields_with_text(self) -> Iterator[tuple[str, str]]:
         """Yield (field name, text) for text, follow_up and confirm_yes when present."""
@@ -305,7 +309,7 @@ class ColumnText(_Model):
 class ArabiziVariant(_Model):
     text: NonEmptyStr
     profile: Literal["variant"]
-    provenance: Literal["hand"]
+    provenance: Provenance
 
 
 class Texts(_Model):

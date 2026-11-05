@@ -19,6 +19,7 @@ from afandem.providers.base import (
     UserMsg,
 )
 from afandem.providers.fake import FAKE_TARGET, FakeModel, Mode, Override
+from afandem.providers.http import failed_tool_call
 from afandem.providers.wire import parse_chat_completion
 from afandem.scenarios import Scenario, load_scenarios
 from afandem.scenarios.schema import Column
@@ -400,3 +401,28 @@ async def test_turn_text_joins_every_assistant_content() -> None:
     episode = await run("clinic-9003", provider)
     assert episode.turns[0].text == "[test] looking\n[test] found"
     assert episode.turns[0].reply == "[test] found"
+
+
+class FailsOnce:
+    """First completion: a server-rejected malformed tool call (Groq `tool_use_failed`)."""
+
+    def __init__(self) -> None:
+        self.requests = 0
+
+    async def complete(self, request: Request) -> Completion:
+        self.requests += 1
+        body = {"error": {"code": "tool_use_failed", "failed_generation": '{"name": "x", "ar'}}
+        completion = failed_tool_call(body, 1)
+        assert completion is not None
+        return completion
+
+
+async def test_tool_use_failed_is_a_recorded_malformed_call_that_ends_the_turn() -> None:
+    provider = FailsOnce()
+    episode = await run("clinic-9001", provider)
+    assert provider.requests == 1  # the turn ends; no follow-up (no text reply ending in stop)
+    assert "tool_use_failed" in episode.flags
+    (row,) = episode.tool_calls
+    assert row.call_valid is False and row.attempted_write is False
+    assert episode.outcome == "ok"
+    assert episode.follow_up_delivered is False

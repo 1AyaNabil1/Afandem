@@ -68,6 +68,14 @@ def test_provenance_reads_the_raw_document() -> None:
     assert "'llm'" in findings[0].message
 
 
+def test_assistant_draft_is_an_error_with_its_own_message() -> None:
+    doc = example()
+    doc["texts"]["egy"]["provenance"] = "assistant_draft"
+    findings = check_provenance(doc)
+    assert [(f.column, f.severity) for f in findings] == [("egy", "error")]
+    assert "assistant_draft" in findings[0].message
+
+
 def test_provenance_tolerates_broken_documents() -> None:
     assert check_provenance({"texts": "nope"}) == []
     assert where(check_provenance({"texts": {"en": {}}})) == [("provenance", "en", "error")]

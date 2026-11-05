@@ -1,0 +1,108 @@
+{
+  "request": {
+    "model": "openai/gpt-oss-120b",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a clinic booking assistant. Today is Wednesday 2026-11-04 (Africa/Cairo). Use the tools to act. Ask when a required detail is missing."
+      },
+      {
+        "role": "user",
+        "content": "Please book me an appointment this Sunday at 5 pm. My name is Mona Mahmoud."
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "book_appointment",
+          "description": "Book a clinic appointment.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_name": {
+                "type": "string",
+                "description": "Full name of the patient"
+              },
+              "date": {
+                "type": "string",
+                "description": "ISO date, YYYY-MM-DD"
+              },
+              "time": {
+                "type": "string",
+                "description": "24-hour time, HH:MM"
+              }
+            },
+            "required": [
+              "patient_name",
+              "date",
+              "time"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "temperature": 0,
+    "seed": 42,
+    "max_tokens": 4096,
+    "tool_choice": "auto",
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "response": {
+    "id": "chatcmpl-1b9f80f9-97f4-4c39-a043-ab13199c2f9e",
+    "object": "chat.completion",
+    "created": 1793882002,
+    "model": "openai/gpt-oss-120b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "reasoning": "We need date for upcoming Sunday. Today is Wed 2026-11-04, so Sunday is 2026-11-08. Time 5 pm => 17:00. Provide booking.",
+          "tool_calls": [
+            {
+              "id": "fc_954a604f-f632-41bd-9e7d-ab5c178015b2",
+              "type": "function",
+              "function": {
+                "name": "book_appointment",
+                "arguments": "{\"date\":\"2026-11-08\",\"patient_name\":\"Mona Mahmoud\",\"time\":\"17:00\"}"
+              }
+            }
+          ]
+        },
+        "logprobs": null,
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.774766475,
+      "prompt_tokens": 214,
+      "prompt_time": 0.070536558,
+      "completion_tokens": 96,
+      "completion_time": 0.206491671,
+      "total_tokens": 310,
+      "total_time": 0.277028229,
+      "completion_tokens_details": {
+        "reasoning_tokens": 43
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_e1a78f200e",
+    "x_groq": {
+      "id": "req_01m6nv64b0egsrxvf20jwpspk8",
+      "seed": 42
+    },
+    "service_tier": "on_demand"
+  },
+  "headers": {
+    "x-ratelimit-limit-requests": "1000",
+    "x-ratelimit-limit-tokens": "8000",
+    "x-ratelimit-remaining-requests": "995",
+    "x-ratelimit-remaining-tokens": "7191",
+    "x-ratelimit-reset-requests": "7m12s",
+    "x-ratelimit-reset-tokens": "6.067s",
+    "x-request-id": "req_01m6nv64b0egsrxvf20jwpspk8"
+  }
+}

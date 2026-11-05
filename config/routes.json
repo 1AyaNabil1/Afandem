@@ -53,6 +53,31 @@
       "notes": "Groq free plan: 30 RPM, 1K RPD, 8K TPM, 200K TPD per organization (official, 5 Nov). Probed 5 Nov 2026: temperature 0, seed, reasoning_effort none and tool_choice auto accepted; tool call and verbatim echo OK. Rate-limit headers after a 460-token call showed 7,540 of 8,000 tokens remaining, so Groq counts tokens used, not max_tokens. Groq's edge rejects library default user agents (Cloudflare 1010); the harness sends afandem/<version>. system_fingerprint changes between consecutive calls. Model is Preview on Groq."
     },
     {
+      "name": "groq_gptoss",
+      "label": "gpt-oss-120b@groq",
+      "base_url": "https://api.groq.com/openai/v1",
+      "key_env": "GROQ_API_KEY",
+      "model": "openai/gpt-oss-120b",
+      "params": {
+        "temperature": 0,
+        "seed": 42,
+        "max_tokens": 4096,
+        "tool_choice": "auto",
+        "reasoning_effort": "low"
+      },
+      "rpm": 30,
+      "tpm": 8000,
+      "concurrency": 1,
+      "timeout_s": 60,
+      "free": true,
+      "verified": true,
+      "droppable": [
+        "reasoning_effort",
+        "seed"
+      ],
+      "notes": "OpenAI's open-weight gpt-oss-120b on Groq's free plan (30 RPM, 1K RPD, 8K TPM, 200K TPD, shared with groq_qwen's organization limits). Reasoning cannot be turned off on gpt-oss; the grid sends reasoning_effort low (a choice, shown in the parameter table). Groq lists tools but no parallel tool calls for this model. Probed 5 Nov 2026: all params accepted (two clean probes); the assistant message carries a `reasoning` field, not echoed, and round 2 succeeds without it. In one earlier probe the model's tool call was unparseable and Groq answered HTTP 400 `tool_use_failed`; the harness scores that as the model's malformed call."
+    },
+    {
       "name": "nvidia_deepseek",
       "label": "deepseek-v4.1-flash@nvidia",
       "base_url": "https://integrate.api.nvidia.com/v1",

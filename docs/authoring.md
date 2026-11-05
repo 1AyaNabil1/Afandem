@@ -28,7 +28,7 @@ pre-fills it in every new scenario. The file holds the project canary from `src/
 | 7 CS-Latin | from the Arabizi wording and the CS insertions (one click copies your CS list). |
 | 8 EN | **blind** |
 | 9 MSA | **blind** |
-| 10 Review and save | the six columns side by side, `natural` 1–5 per column, orthographic tags per column, cultural tags, `phenomenon_realised`, the canary, the checks, save. |
+| 10 Review and save | the six columns side by side with their provenance, `natural` 1–5 per column, orthographic tags per column, cultural tags, `phenomenon_realised`, the canary, the checks, save. |
 
 Word counts are live in every column, with the length ratio to EGY (the 0.5–1.8 band) as a hint.
 
@@ -52,9 +52,9 @@ draft is not a file; save the JSON.
 
 Save as `data/<domain>/<id>.json`, e.g. `data/clinic/clinic-0001.json` (Cmd+S works too). The
 file is pretty-printed UTF-8 with the keys in schema order, the same text as Python's
-`json.dumps(indent=2, ensure_ascii=False)`. `provenance` is always `"hand"`; the tool will not open
-a file whose texts say otherwise. If the checks still list problems you can save anyway, as work in
-progress.
+`json.dumps(indent=2, ensure_ascii=False)`. Every column of a new scenario is `"hand"`; a file you
+open keeps each column's `provenance` as it was (see below), and the tool refuses a file with any
+other value. If the checks still list problems you can save anyway, as work in progress.
 
 Then run, in the repo:
 
@@ -66,9 +66,25 @@ The lint is the authority (add `--manual` for the checks done by hand); the page
 part of it. To change a saved scenario: **Open…**, edit, **Add revision** with a changelog note,
 and save over the file.
 
+## Reviewing assistant drafts
+
+A column (or the Arabizi variant) drafted by the AI assistant at your request carries
+`"provenance": "assistant_draft"`. Such a file can be run, but `afandem data lint` reports every
+draft as an error and it never enters the measured set until you rewrite or approve it.
+
+Open the file as usual. The open notice lists the drafted columns; each one has a **draft** mark in
+the step bar, a **drafted by the assistant** panel on its step, and a badge on the review step, which
+shows the provenance of all six columns side by side. Rewrite the column, or read it (text and
+follow-up or confirmation) and keep it as it is, then click **I rewrote or approved this column**
+(**I rewrote or approved the variant** for the variant). That button is the only thing that sets
+`provenance` to `"hand"`, and only for that column: editing the text never does, and saving keeps
+every draft as `assistant_draft`. **Undo** next to a column you marked turns it back into a draft.
+The blind EN and MSA steps stay blind: each shows only its own column and its own provenance.
+
 ## Maintenance
 
 `tests/test_author_tool.py` checks the tool's constants against the schema, the lints and the
-sandbox tool registries. With Node installed it also round-trips the fixture scenario through the
-page's model and checks that the page rejects what the schema rejects. It fails if any file in
+sandbox tool registries. With Node installed it also round-trips the fixture scenario (as written
+and with drafted columns) through the page's model, checks that the page rejects what the schema
+rejects, and that only the approve action changes a column's provenance. It fails if any file in
 `tools/author/` contains Arabic script or a network reference.

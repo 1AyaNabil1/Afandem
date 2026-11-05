@@ -17,6 +17,9 @@
   --bad-soft: #fdecea;
   --blind: #4d3c94;
   --blind-soft: #ece9f8;
+  --draft: #9c2f6f;
+  --draft-soft: #fbeaf3;
+  --draft-ink: #ffffff;
   --focus: #2b6cd8;
   --radius: 8px;
   --font-ui: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
@@ -44,6 +47,9 @@
     --bad-soft: #3d1b19;
     --blind: #b3a6f2;
     --blind-soft: #2a2545;
+    --draft: #f09ac8;
+    --draft-soft: #3a1d2e;
+    --draft-ink: #2a1020;
     --focus: #7aa7ff;
     color-scheme: dark;
   }
@@ -209,6 +215,17 @@ button.secondary {
 button.danger {
   color: var(--bad);
   border-color: color-mix(in srgb, var(--bad) 40%, var(--line));
+}
+
+button.approve {
+  background: var(--draft);
+  border-color: var(--draft);
+  color: var(--draft-ink);
+  font-weight: 600;
+}
+
+button.approve:hover:not(:disabled) {
+  border-color: var(--ink);
 }
 
 button.small {
@@ -411,6 +428,17 @@ details.card[open] > summary {
   color: var(--blind);
   border-color: var(--blind);
   background: var(--blind-soft);
+}
+
+.badge-draft {
+  color: var(--draft);
+  border-color: var(--draft);
+  background: var(--draft-soft);
+}
+
+.badge-approved {
+  color: var(--good);
+  border-color: var(--good);
 }
 
 .badge-write {
@@ -798,6 +826,49 @@ textarea.unused {
 
 .ref-text h4 {
   margin: 0 0 0.25rem;
+}
+
+.provenance-panel {
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin: 0 0 1rem;
+  border: 1px solid var(--line);
+}
+
+.provenance-panel p {
+  margin: 0 0 0.4rem;
+}
+
+.provenance-panel p:last-child,
+.provenance-panel .row-actions {
+  margin-bottom: 0;
+}
+
+.provenance-panel.provenance-draft {
+  background: var(--draft-soft);
+  border-color: var(--draft);
+  border-left-width: 4px;
+}
+
+.provenance-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+}
+
+.provenance-line.provenance-draft {
+  border-left: 3px solid var(--draft);
+  padding-left: 0.4rem;
+}
+
+.provenance-table {
+  table-layout: fixed;
+  min-width: 48rem;
+}
+
+.provenance-table td.is-draft {
+  background: var(--draft-soft);
 }
 
 .blind-banner {

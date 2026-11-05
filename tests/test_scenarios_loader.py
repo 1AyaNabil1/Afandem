@@ -173,7 +173,7 @@ def test_json_schema_shape() -> None:
     assert "texts" in schema["required"]
     column = schema["$defs"]["ColumnText"]
     assert column["additionalProperties"] is False
-    assert column["properties"]["provenance"]["const"] == "hand"
+    assert column["properties"]["provenance"]["enum"] == ["hand", "assistant_draft"]
 
 
 def test_schema_export_check_and_write(tmp_path: Path) -> None:

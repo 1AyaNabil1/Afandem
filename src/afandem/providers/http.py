@@ -41,11 +41,13 @@ import httpx2
 from afandem import __version__
 from afandem.providers import wire
 from afandem.providers.base import (
+    AssistantMsg,
     Completion,
     FailureOutcome,
     JSONDict,
     ProviderOutcomeError,
     Request,
+    ToolCall,
 )
 from afandem.providers.routes import RouteConfig
 
@@ -423,6 +425,35 @@ def _on_400(failure: _Failure) -> _Decision:
     return failure.outcome("provider_error")
 
 
+TOOL_USE_FAILED: Final = "tool_use_failed"
+_CALL_NAME = re.compile(r'"name"\s*:\s*"([^"]+)"')
+
+
+def failed_tool_call(body: object, latency_ms: int | None) -> Completion | None:
+    """A tool call the server could not parse, returned as the model's completion.
+
+    Groq answers a generated tool call that is not valid JSON with HTTP 400, error code
+    `tool_use_failed` and the raw text in `failed_generation` (5 Nov 2026 probe). That is the
+    model's output, not a provider failure: excluding it would hide model failures, and it may
+    be column-asymmetric. It becomes one malformed call (name parsed when possible, arguments =
+    the raw generation) with `finish_reason_raw = "tool_use_failed"`; the loop records it, flags
+    the episode and ends the turn, and the cache keeps it like any completion.
+    """
+    error = _error_object(body)
+    if error.get("code") != TOOL_USE_FAILED:
+        return None
+    generation = str(error.get("failed_generation") or "")
+    match = _CALL_NAME.search(generation)
+    call = ToolCall(id=TOOL_USE_FAILED, name=match.group(1) if match else "", arguments=generation)
+    return Completion(
+        assistant=AssistantMsg(content=None, tool_calls=(call,)),
+        finish_reason="tool_calls",
+        finish_reason_raw=TOOL_USE_FAILED,
+        latency_ms=latency_ms,
+        raw=dict(body) if isinstance(body, Mapping) else {"body": body},
+    )
+
+
 def classify_http_error(route: str, response: ErrorResponse, wall_now: float) -> _Decision:
     """Map a non-2xx response to a retry, a harness outcome or a configuration error."""
     error = _error_object(response.body)
@@ -602,6 +633,8 @@ class OpenAICompatProvider:
         status = response.status_code
         if not 200 <= status < 300:
             body = text if parsed is _NOT_JSON else parsed
+            if status == 400 and (failed := failed_tool_call(body, latency_ms)) is not None:
+                return failed
             error = ErrorResponse(status, body, text, response.headers)
             return classify_http_error(self.route.name, error, self.hooks.wall_clock())
         if parsed is _NOT_JSON:

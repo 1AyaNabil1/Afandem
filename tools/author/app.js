@@ -4,6 +4,8 @@
  * scenario model lives in model.js. Only the current step is ever in the page, so on the
  * blind steps (EN, MSA) the EGY, Arabizi, CS and CS-Latin texts are not in the DOM at all.
  * The tool never writes, suggests or pre-fills any text: every text field starts empty.
+ * Provenance is kept per column: a column opened as an assistant draft stays one until the
+ * author marks it rewritten or approved (see "provenance" below).
  */
 (function () {
   "use strict";
@@ -284,7 +286,7 @@
     });
   }
 
-  function lintReminder(name, domain) {
+  function lintReminder(name, domain, drafted) {
     const wanted = "data/" + (domain || "<domain>") + "/" + name;
     return h(
       "div",
@@ -299,6 +301,17 @@
         " (move it there if the browser saved it elsewhere, e.g. to Downloads). Then run, in the repo:"
       ),
       commandLine(LINT_COMMAND),
+      drafted && drafted.length
+        ? h(
+            "p",
+            null,
+            "Saved as drafted by the assistant (",
+            code(M.ASSISTANT_DRAFT),
+            "): ",
+            draftList(drafted),
+            ". The lint reports each one until you rewrite or approve it here and save again."
+          )
+        : null,
       h("p", { class: "help", text: "The tool does not run anything; the lint is the authority on every rule." })
     );
   }
@@ -386,8 +399,11 @@
   function renderStepper() {
     const nav = byId("stepper");
     nav.textContent = "";
+    const drafted = M.assistantDrafts(state.draft);
     M.STEPS.forEach(function (step, index) {
       const current = state.draft.step === step.id;
+      const hasDraft =
+        step.column && (drafted.indexOf(step.column) >= 0 || (step.column === "arabizi" && drafted.indexOf(M.VARIANT) >= 0));
       const dot = h("span", { class: "dot", "aria-hidden": "true" });
       const count = h("span", { class: "sr-only" });
       live(function () {
@@ -410,6 +426,7 @@
           h("span", { class: "num", text: String(index + 1) }),
           h("span", { class: "step-title", text: step.title }),
           step.blind ? h("span", { class: "badge badge-blind", text: "blind" }) : null,
+          hasDraft ? h("span", { class: "badge badge-draft", title: "drafted by the assistant", text: "draft" }) : null,
           dot,
           count
         )
@@ -522,6 +539,172 @@
     return box;
   }
 
+  // ------------------------------------------------------------------ provenance
+  //
+  // Each column (and the Arabizi variant) keeps the provenance it was opened with. A column
+  // drafted by the assistant stays assistant_draft, however much its text is edited, until the
+  // author clicks "I rewrote or approved this column"; that is the only way it becomes hand.
+
+  function provenanceBlock(target) {
+    return target === M.VARIANT ? state.draft.arabiziVariant : state.draft.texts[target];
+  }
+
+  function targetLabel(target) {
+    return target === M.VARIANT ? M.VARIANT : M.COLUMN_INFO[target].label;
+  }
+
+  function draftList(targets) {
+    return targets.map(targetLabel).join(", ");
+  }
+
+  function draftBadge() {
+    return h("span", { class: "badge badge-draft", title: "provenance " + M.ASSISTANT_DRAFT, text: "drafted by the assistant" });
+  }
+
+  function approvedBadge() {
+    return h("span", { class: "badge badge-approved", title: "provenance " + M.HAND, text: "approved by you" });
+  }
+
+  function approveButton(target, small) {
+    return h("button", {
+      type: "button",
+      class: "approve" + (small ? " small" : ""),
+      title: "Sets the provenance of " + targetLabel(target) + " to " + M.HAND,
+      text: target === M.VARIANT ? "I rewrote or approved the variant" : "I rewrote or approved this column",
+      onclick: function () {
+        M.approve(state.draft, target);
+        changed(true);
+      }
+    });
+  }
+
+  function undoButton(target) {
+    return h("button", {
+      type: "button",
+      class: "small secondary",
+      title: "Mark " + targetLabel(target) + " as drafted by the assistant again",
+      text: "Undo",
+      onclick: function () {
+        M.undoApproval(state.draft, target);
+        changed(true);
+      }
+    });
+  }
+
+  /** On a column step (and in the variant section): nothing for text written in this tool. */
+  function provenancePanel(target) {
+    const block = provenanceBlock(target);
+    const what = target === M.VARIANT ? "variant" : "column";
+    if (block.provenance === M.ASSISTANT_DRAFT) {
+      return h(
+        "div",
+        { class: "provenance-panel provenance-draft" },
+        h("p", null, draftBadge(), " ", h("strong", { text: "This " + what + " was drafted by the AI assistant." })),
+        h(
+          "p",
+          { class: "help" },
+          "Rewrite it, or read it and approve it as it is",
+          target === M.VARIANT ? "" : " (the text and, where the behaviour has one, the follow-up or confirmation)",
+          ". Editing does not change its label: until you click the button it is saved as ",
+          code(M.ASSISTANT_DRAFT),
+          ", the lint reports it, and it never enters the measured set."
+        ),
+        h("div", { class: "row-actions" }, approveButton(target, false))
+      );
+    }
+    if (M.canUndoApproval(state.draft, target)) {
+      return h(
+        "div",
+        { class: "provenance-panel provenance-approved" },
+        h(
+          "p",
+          null,
+          approvedBadge(),
+          " Marked hand-written (",
+          code(M.HAND),
+          "). It was drafted by the assistant when the file was opened. ",
+          undoButton(target)
+        )
+      );
+    }
+    return null;
+  }
+
+  /** One review-card line: the provenance and its action. */
+  function provenanceLine(target) {
+    const block = provenanceBlock(target);
+    const draft = block.provenance === M.ASSISTANT_DRAFT;
+    const undo = !draft && M.canUndoApproval(state.draft, target);
+    return h(
+      "div",
+      { class: "provenance-line" + (draft ? " provenance-draft" : "") },
+      h("p", { class: "help" }, target === M.VARIANT ? "variant provenance: " : "provenance: ", code(block.provenance), undo ? [" ", approvedBadge()] : null),
+      draft ? approveButton(target, true) : undo ? undoButton(target) : null
+    );
+  }
+
+  /** Review step: the six columns (and the variant) side by side. */
+  function provenanceSection() {
+    const d = state.draft;
+    const targets = M.AUTHORING_ORDER.slice();
+    if (d.arabiziVariant.enabled) targets.push(M.VARIANT);
+    const drafted = M.assistantDrafts(d);
+    return section(
+      "Provenance",
+      h(
+        "p",
+        { class: drafted.length ? "help warn" : "help" },
+        drafted.length
+          ? [
+              String(drafted.length),
+              drafted.length === 1 ? " is" : " are",
+              " still drafted by the assistant: ",
+              draftList(drafted),
+              ". Each is saved as ",
+              code(M.ASSISTANT_DRAFT),
+              " until you rewrite or approve it and click its button below."
+            ]
+          : ["Every column is hand-written (", code(M.HAND), ")."]
+      ),
+      h(
+        "div",
+        { class: "scroll-x" },
+        h(
+          "table",
+          { class: "table compact provenance-table" },
+          h(
+            "thead",
+            null,
+            h(
+              "tr",
+              null,
+              targets.map(function (target) {
+                return h("th", { class: target === M.VARIANT ? "mono" : null, text: targetLabel(target) });
+              })
+            )
+          ),
+          h(
+            "tbody",
+            null,
+            h(
+              "tr",
+              null,
+              targets.map(function (target) {
+                const block = provenanceBlock(target);
+                return h(
+                  "td",
+                  { class: block.provenance === M.ASSISTANT_DRAFT ? "is-draft" : null },
+                  code(block.provenance),
+                  block.provenance === M.ASSISTANT_DRAFT ? [" ", draftBadge()] : M.canUndoApproval(d, target) ? [" ", approvedBadge()] : null
+                );
+              })
+            )
+          )
+        )
+      )
+    );
+  }
+
   // ------------------------------------------------------------------ step 1: meta
 
   function setDomain(value) {
@@ -543,6 +726,7 @@
     const d = state.draft;
     const m = d.meta;
     const rules = M.behaviourRules(m.behaviour);
+    const drafted = M.assistantDrafts(d);
     main.appendChild(
       h("p", { class: "lead", text: "Who is speaking, when, and what kind of item this is. Nothing on this step is text a model sees." })
     );
@@ -757,10 +941,14 @@
           { class: "fixed-values" },
           "Fixed: schema_version ",
           code(S.schema_version),
+          " · reply_language ",
+          code(S.reply_language),
           " · provenance ",
-          code(S.provenance),
-          " on every text · reply_language ",
-          code(S.reply_language)
+          code(M.HAND),
+          " on every column of a new scenario",
+          drafted.length
+            ? [" · ", drafted.length + " drafted by the assistant (", code(M.ASSISTANT_DRAFT), "): ", draftList(drafted)]
+            : null
         )
       )
     );
@@ -1690,6 +1878,8 @@
     const blind = M.BLIND_COLUMNS.indexOf(column) >= 0;
     const editor = h("section", { class: "editor" });
 
+    const origin = provenancePanel(column);
+    if (origin) editor.appendChild(origin);
     editor.appendChild(
       textField(column, "text", {
         label: info.label + " text",
@@ -1812,8 +2002,9 @@
             changed(true);
           }
         }),
-        h("span", null, "This scenario carries an Arabizi variant (the house text re-spelled under the variant profile; profile ", code("variant"), ", provenance ", code("hand"), ")")
+        h("span", null, "This scenario carries an Arabizi variant (the house text re-spelled under the variant profile; profile ", code("variant"), ", provenance ", code(v.provenance), ")")
       ),
+      v.enabled ? provenancePanel(M.VARIANT) : null,
       area,
       v.enabled ? count : null
     );
@@ -1901,6 +2092,7 @@
         null,
         h("h3", { text: info.label }),
         blind ? badge("written blind", "blind") : null,
+        block.provenance === M.ASSISTANT_DRAFT ? draftBadge() : null,
         h("button", {
           type: "button",
           class: "small secondary",
@@ -1927,12 +2119,21 @@
         : null,
       M.isLatinArabizi(column) ? h("p", { class: "help" }, "arabizi_profile: ", code(block.arabizi_profile || "none")) : null,
       column === "arabizi" && d.arabiziVariant.enabled
-        ? [h("p", { class: "sub-label", text: "arabizi_variant" }), textView("arabizi", d.arabiziVariant.text)]
+        ? [
+            h(
+              "p",
+              { class: "sub-label" },
+              "arabizi_variant",
+              d.arabiziVariant.provenance === M.ASSISTANT_DRAFT ? [" ", draftBadge()] : null
+            ),
+            textView("arabizi", d.arabiziVariant.text),
+            provenanceLine(M.VARIANT)
+          ]
         : null,
       ratio,
       natural,
       tags,
-      h("p", { class: "help" }, "provenance: ", code(S.provenance))
+      provenanceLine(column)
     );
   }
 
@@ -2138,7 +2339,9 @@
           }
         })
       ),
-      state.lastSaved ? lintReminder(state.lastSaved.name, state.lastSaved.domain) : h("p", { class: "help" }, "After saving, run ", code(LINT_COMMAND), " in the repo.")
+      state.lastSaved
+        ? lintReminder(state.lastSaved.name, state.lastSaved.domain, state.lastSaved.drafted)
+        : h("p", { class: "help" }, "After saving, run ", code(LINT_COMMAND), " in the repo.")
     );
   }
 
@@ -2156,6 +2359,7 @@
 
   function renderReview(main) {
     main.appendChild(h("p", { class: "lead", text: "All six columns side by side. Rate each one, tag it, tick what is realised, then save." }));
+    main.appendChild(provenanceSection());
     main.appendChild(
       h(
         "div",
@@ -2273,11 +2477,11 @@
     }
     state.draft.savedText = text;
     state.draft.source = savedName;
-    const saved = { name: savedName, domain: state.draft.meta.domain };
+    const saved = { name: savedName, domain: state.draft.meta.domain, drafted: M.assistantDrafts(state.draft) };
     state.lastSaved = saved;
     persistNow();
     notice("save", "ok", function () {
-      return lintReminder(saved.name, saved.domain);
+      return lintReminder(saved.name, saved.domain, saved.drafted);
     });
     render();
   }
@@ -2317,6 +2521,18 @@
     state.lastSaved = null;
     dismiss("save");
     persistNow();
+    const drafted = M.assistantDrafts(draft);
+    const draftNote = drafted.length
+      ? h(
+          "p",
+          null,
+          "Drafted by the assistant (",
+          code(M.ASSISTANT_DRAFT),
+          "): ",
+          draftList(drafted),
+          ". They keep that label, however much you edit them, until you click “I rewrote or approved this column” for each."
+        )
+      : null;
     if (loaded.warnings.length) {
       notice(
         "open",
@@ -2331,11 +2547,12 @@
             loaded.warnings.map(function (w) {
               return h("li", { text: w });
             })
-          )
+          ),
+          draftNote
         )
       );
     } else {
-      notice("open", "ok", h("p", null, "Opened ", code(name), "."));
+      notice("open", drafted.length ? "info" : "ok", h("div", null, h("p", null, "Opened ", code(name), "."), draftNote));
     }
     render();
     window.scrollTo(0, 0);

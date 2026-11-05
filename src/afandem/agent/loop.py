@@ -57,7 +57,9 @@ DEADLINE_MS: Final = 15 * 60 * 1000
 FOLLOW_UP_RULE: Final = "v1"
 
 TurnKind = Literal["initial", "confirm_yes", "follow_up"]
-TurnEnd = Literal["reply", "length", "too_many_invalid_calls", "round_cap", "deadline"]
+TurnEnd = Literal[
+    "reply", "length", "too_many_invalid_calls", "round_cap", "deadline", "malformed_call"
+]
 
 FLAG_ORDER: Final = (
     "round_cap_hit",
@@ -65,6 +67,7 @@ FLAG_ORDER: Final = (
     "length",
     "truncated_tool_call",
     "empty_reply",
+    "tool_use_failed",
     "deadline",
     "model_drift",
 )
@@ -301,6 +304,12 @@ async def _run_turn(ctx: _Context, turn: int, kind: TurnKind, user_text: str) ->
                 if invalid[call.name] >= 2:
                     episode.add_flag("invalid_loop")
                     return done("too_many_invalid_calls", round_)
+        if completion.finish_reason_raw == "tool_use_failed":
+            # The server rejected the model's tool call as unparseable (Groq HTTP 400): the
+            # malformed call is recorded above; the turn ends, since the server would not
+            # accept the malformed call back in the history.
+            episode.add_flag("tool_use_failed")
+            return done("malformed_call", round_)
     episode.add_flag("round_cap_hit")
     return done("round_cap", ctx.max_rounds)
 
