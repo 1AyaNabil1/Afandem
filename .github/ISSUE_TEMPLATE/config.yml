@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/1AyaNabil1/Afandem/security/advisories/new
+    about: Private vulnerability reporting. Please don't open a public issue for security problems.
+  - name: Design, specifications and pre-registration
+    url: https://github.com/1AyaNabil1/Afandem/blob/main/docs/plan.md
+    about: How the benchmark is built and what it measures, before you report a design question.

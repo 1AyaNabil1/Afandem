@@ -5,12 +5,14 @@
                 [--repeat K] [--concurrency N] [--overrides FILE] [--strict-drift] [--dry-run]
     afandem show RUN_DIR [--scenario ID] [--column C]
     afandem summary RUN_DIR
-    afandem data lint PATH [--manual] [--canary-guid GUID]
+    afandem data lint PATH [--manual] [--canary-guid GUID] [--allow-drafts]
 
 `afandem run` without `--fake` and without any provider key exits with code 2 before anything
 else happens (no network). Real targets are resolved in one place, `_resolve_real_targets`.
 Exit codes of `run`: 0 done, 2 usage or setup error, 3 budget stop, 4 quota stop, 5 drift stop
-(`--strict-drift`).
+(`--strict-drift`). `data lint` exits 0 without errors, 1 with errors, 2 when PATH holds no
+scenarios; `--allow-drafts` reports `assistant_draft` provenance as warnings (CI on pushes and
+pull requests), never other provenance values, and the release workflow lints without it.
 """
 
 import argparse
@@ -69,6 +71,16 @@ EXIT_USAGE = 2
 DEFAULT_CACHE = Path("cache") / "responses.sqlite"
 
 
+def _route_help() -> str:
+    """`--target` help naming the configured routes; a wheel installed outside a checkout has
+    no `config/routes.json`, and the CLI must still start (`--version`, `--help`, `data lint`)."""
+    try:
+        names = ", ".join(route_names())
+    except (OSError, ValueError):
+        return "a route from config/routes.json (repeatable; needs a repository checkout)"
+    return f"a route from config/routes.json (repeatable): {names}"
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="afandem",
@@ -86,7 +98,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="NAME",
-        help=f"a route from config/routes.json (repeatable): {', '.join(route_names())}",
+        help=_route_help(),
     )
     run.add_argument("--scenarios", type=Path, default=Path("data"), help="file or directory")
     run.add_argument("--columns", help="comma-separated columns (default: all six)")
@@ -127,6 +139,12 @@ def _build_parser() -> argparse.ArgumentParser:
     lint.add_argument("--manual", action="store_true", help="also list the checks to do by hand")
     lint.add_argument(
         "--canary-guid", default=CANARY_GUID, help="project canary GUID (default: the project's)"
+    )
+    lint.add_argument(
+        "--allow-drafts",
+        action="store_true",
+        help="report assistant_draft provenance as warnings, not errors (drafts still never "
+        "enter the measured set; releases lint without this flag)",
     )
     return parser
 
@@ -463,20 +481,30 @@ def _summary(run_dir: Path) -> int:
     return 0
 
 
-def _data_lint(path: Path, *, manual: bool, canary_guid: str | None) -> int:
+def _data_lint(path: Path, *, manual: bool, canary_guid: str | None, allow_drafts: bool) -> int:
     try:
-        report = lint_path(path, canary_guid=canary_guid)
+        report = lint_path(path, canary_guid=canary_guid, allow_drafts=allow_drafts)
     except ScenarioLoadError as exc:
         print(f"afandem data lint: {exc}", file=sys.stderr)
         return 2
     for finding in report.findings:
         if manual or finding.severity != "manual":
             print(finding)
+    drafts = sum(
+        1
+        for finding in report.findings
+        if finding.rule == "provenance" and finding.severity == "warning"
+    )
     print(
         f"{len(report.files)} file(s): {report.count('error')} error(s), "
         f"{report.count('warning')} warning(s), {report.count('manual')} manual check(s)"
         + ("" if manual or not report.count("manual") else " (--manual lists them)")
     )
+    if drafts:
+        print(
+            f"{drafts} assistant_draft finding(s) reported as warnings (--allow-drafts): "
+            "drafts stay out of the measured set until the author approves them"
+        )
     return 0 if report.ok else 1
 
 
@@ -489,7 +517,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "summary":
         return _summary(args.run_dir)
     if args.command == "data" and args.data_command == "lint":
-        return _data_lint(args.path, manual=args.manual, canary_guid=args.canary_guid)
+        return _data_lint(
+            args.path,
+            manual=args.manual,
+            canary_guid=args.canary_guid,
+            allow_drafts=args.allow_drafts,
+        )
     _build_parser().print_help()
     return 0
 

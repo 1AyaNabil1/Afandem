@@ -1,0 +1,93 @@
+name: Scenario or data issue
+description: A scenario's expected outcome looks wrong, or one of its texts does not read naturally.
+labels: [data]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you: native-speaker reports are what keep the benchmark honest.
+
+        **Please don't paste the scenario's text.** Benchmark items are never copied into
+        issues, posts or chats, to limit training-data contamination. Point to the item by its
+        id, column and field instead; the file in `data/` is public, so anyone can open it.
+
+        Every benchmark text is written, or reviewed and approved, by the project's
+        native-speaker author. She makes any change to the wording herself, so you don't need
+        to propose replacement text: describe what is wrong and why.
+  - type: input
+    id: scenario
+    attributes:
+      label: Scenario id
+      description: For example `clinic-0001` (the `id` field, also the file name).
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of problem
+      options:
+        - Wrong expected outcome (tool calls, arguments, end state, or the expected behaviour)
+        - Unnatural text (no native speaker would write it this way)
+        - Wrong language variety or register for the column
+        - Wrong tag (cultural phenomenon, orthographic tag, gender)
+        - The columns don't ask for the same thing
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: columns
+    attributes:
+      label: Column(s)
+      multiple: true
+      options:
+        - en (English)
+        - msa (Modern Standard Arabic)
+        - egy (Egyptian Arabic, Arabic script)
+        - arabizi (Egyptian Arabic, Latin letters and digits)
+        - cs (code-switched Egyptian and English, Arabic script)
+        - cs_latin (code-switched Egyptian and English, Arabizi)
+        - arabizi_variant
+        - Not about a text (expected outcome, state, slots)
+    validations:
+      required: true
+  - type: dropdown
+    id: field
+    attributes:
+      label: Field
+      multiple: true
+      options:
+        - text
+        - follow_up
+        - confirm_yes
+        - expected (tool_calls, end_state_patch, must_not_call, answer_must_contain)
+        - slots
+        - initial_state
+        - tags
+        - Other
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong, and why
+      description: >-
+        For an outcome: what the correct result is under the scenario's stated policy, and why.
+        For a text: what makes it read as unnatural, the wrong variety or the wrong register
+        (word choice, spelling convention, formality), described without quoting the item.
+    validations:
+      required: true
+  - type: dropdown
+    id: background
+    attributes:
+      label: Your background for this report (optional)
+      description: Helps weigh reports about naturalness; it is never published with your name.
+      options:
+        - Native Egyptian Arabic speaker
+        - Native speaker of another Arabic variety
+        - Fluent non-native speaker of Arabic
+        - Other
+  - type: checkboxes
+    id: no-paste
+    attributes:
+      label: Contamination
+      options:
+        - label: I have not pasted the scenario's text, or any item from a private batch, into this issue.
+          required: true

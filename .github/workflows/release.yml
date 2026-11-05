@@ -1,0 +1,148 @@
+# Release on a version tag (vX.Y.Z, matching `version` in pyproject.toml).
+# Order: every CI check + the release gate -> build and attest -> GitHub Release
+# -> PyPI (off until trusted publishing is configured; see docs/ci.md).
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  UV_VERSION: "0.13.7"
+
+jobs:
+  checks:
+    name: checks
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      pull-requests: read # requested by the security job in ci.yml
+
+  gate:
+    name: release gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: false # release jobs never restore a cache
+      - name: Install
+        run: uv sync --locked
+      - name: The tag matches the package version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(uv version --short)"
+          if [ "${TAG#v}" != "$version" ]; then
+            echo "::error title=Version mismatch::tag ${TAG} but pyproject.toml says ${version}"
+            exit 1
+          fi
+      - name: Lint data/ with assistant drafts as errors (no --allow-drafts)
+        # A release never contains assistant drafts (docs/decisions.md, D19).
+        run: |
+          if find data -mindepth 2 -maxdepth 2 -name '*.json' -not -path 'data/schema/*' | grep -q .; then
+            uv run afandem data lint data
+          else
+            echo "::notice title=data lint::data/ holds no scenarios"
+          fi
+
+  build:
+    name: build and attest
+    needs: [checks, gate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # sign the build provenance attestation (Sigstore)
+      attestations: write # store the attestation with the repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: false
+      - name: Build the sdist and wheel
+        run: uv build --out-dir dist
+      - name: Check the distribution metadata (twine)
+        run: uvx twine@7.0.0 check --strict dist/*
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*
+      - name: Upload dist/
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-dist
+          path: dist/
+          retention-days: 30
+
+  github-release:
+    name: GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the release and upload its files
+    steps:
+      - name: Download dist/
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-dist
+          path: dist
+      - name: Create the release with generated notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          flags=()
+          # PEP 440 pre-releases (v1.0.0a1, v1.0.0b2, v1.0.0rc1, v1.0.0.dev1) are marked as such.
+          if [[ "$TAG" =~ (a|b|rc|\.dev)[0-9]+$ ]]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$TAG" \
+            --generate-notes \
+            --verify-tag \
+            "${flags[@]}"
+
+  pypi:
+    # Off until the owner sets the repository variable PYPI_PUBLISH to "true" after
+    # registering this workflow as a trusted publisher on PyPI (docs/ci.md). No API token.
+    name: publish to PyPI
+    if: ${{ vars.PYPI_PUBLISH == 'true' }}
+    needs: [build, github-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/afandem/
+    permissions:
+      id-token: write # OIDC token for PyPI trusted publishing
+    steps:
+      - name: Download dist/
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-dist
+          path: dist
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: dist/

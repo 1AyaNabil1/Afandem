@@ -1,5 +1,11 @@
 # Afandem (أفندم)
 
+[![ci](https://github.com/1AyaNabil1/Afandem/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/1AyaNabil1/Afandem/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/1AyaNabil1/Afandem/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/1AyaNabil1/Afandem/actions/workflows/codeql.yml)
+[![Python 3.13 | 3.14](https://img.shields.io/badge/python-3.13%20%7C%203.14-3776ab.svg)](pyproject.toml)
+[![Code licence: MIT](https://img.shields.io/badge/code%20licence-MIT-blue.svg)](LICENSE)
+[![Data licence: CC BY 4.0](https://img.shields.io/badge/data%20licence-CC%20BY%204.0-lightgrey.svg)](data/LICENSE)
+
 **Does an LLM agent still do the right thing when you talk to it the way Egyptians actually type?**
 
 Afandem is an open benchmark for *tool-using* LLM agents in Arabic. It takes the same request — book a clinic appointment, change a phone bundle, block a card — and writes it six ways: English, Modern Standard Arabic, Egyptian Arabic, Arabizi (Arabic in Latin letters and digits: `3ayez a7gez`), and code-switched Egyptian+English in both of its real forms (Arabic script with English words, and Arabizi with English words). Every version has the same checkable outcome, so a difference in what the agent *does* — which tool it calls, with which arguments, whether it asks when it should ask and refuses when it should refuse — can be attributed to the language variety.
@@ -15,18 +21,25 @@ The name is what an Egyptian service agent says to take your request — and wha
 ## How it works (planned)
 
 - Small, deterministic tool sandboxes (clinic, telecom, banking) with a fixed clock and a stated policy, so the correct end state is known.
-- Every scenario authored by hand by a native Egyptian speaker; nothing machine-translated; provenance recorded per item.
+- Every text written, or reviewed and approved, by the native Egyptian-speaking author; nothing machine-translated; provenance recorded per column, and assistant drafts excluded from the measured set until the author approves them.
 - Scoring is programmatic (end state, tool calls, arguments); an LLM judge is used only for a few text labels and never for task success.
 - Paired design, pre-registered hypotheses, confidence intervals everywhere, and a run-to-run noise floor next to every consistency number.
 - Full traces and a response cache are published, so every reported number can be reproduced offline.
 
 ## Status
 
-**Phase 0 — setup (November 2026).** The design is in [`docs/plan.md`](docs/plan.md), with the [dataset](docs/dataset-spec.md), [harness](docs/harness-spec.md) and [methodology](docs/methodology.md) specifications. The hypotheses, analysis and sample-size rule are fixed in advance in [`docs/preregistration.md`](docs/preregistration.md) (tag `prereg-v1`). The code is a skeleton: no scenarios and no results yet. Next: a 30-scenario pilot on two domains.
+**Phase 1 — pilot (November 2026).**
+
+- **The harness works end to end:** deterministic clinic and banking sandboxes with a fixed clock, the agent loop, an OpenAI-compatible provider for the free routes, a response cache, full traces, and `afandem run | show | summary`. CI runs it against an offline fake model on every push ([`docs/ci.md`](docs/ci.md)).
+- **The first pilot scenarios are assistant drafts awaiting the author's review.** Their provenance says so, `afandem data lint` reports them as errors, and none enters the measured set until the author rewrites or approves it.
+- **No results yet.**
+
+The design is in [`docs/plan.md`](docs/plan.md), with the [dataset](docs/dataset-spec.md), [harness](docs/harness-spec.md) and [methodology](docs/methodology.md) specifications. The hypotheses, analysis and sample-size rule are fixed in advance in [`docs/preregistration.md`](docs/preregistration.md) (tag `prereg-v1`). To contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ```bash
 uv sync
-uv run afandem run --fake      # offline check, no keys needed
+uv run afandem run --fake --scenarios tests/fixtures/smoke --runs-dir runs   # offline, no keys needed
+uv run afandem summary runs/<run-id>                                         # the run id printed above
 uv run pytest
 ```
 

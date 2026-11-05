@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in the harness, the CLI, the lints, the authoring tool or CI does not work.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. For a security problem, don't open an issue: use
+        [private vulnerability reporting](https://github.com/1AyaNabil1/Afandem/security/advisories/new)
+        (see SECURITY.md). For a problem with a scenario's text or expected outcome, use the
+        "Scenario or data issue" form instead.
+
+        Never paste API keys, `.env` contents or unredacted traces from a real provider run.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - afandem run / show / summary
+        - afandem data lint or the scenario schema
+        - Tool sandboxes (clinic, banking)
+        - Providers, cache or traces
+        - Authoring tool (tools/author/)
+        - CI, release or packaging
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: >-
+        The exact commands, ideally against the offline fake model
+        (`uv run afandem run --fake --scenarios tests/fixtures/smoke --runs-dir runs`).
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output or traceback
+      description: Paste it as text. It is shown as code, so no backticks are needed.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      description: "`git rev-parse --short HEAD` or `uv run afandem --version`"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: "OS, `uv --version`, Python version, and `node --version` for the authoring tool"

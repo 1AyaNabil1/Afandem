@@ -76,6 +76,18 @@ def test_assistant_draft_is_an_error_with_its_own_message() -> None:
     assert "assistant_draft" in findings[0].message
 
 
+def test_allow_drafts_turns_only_assistant_drafts_into_warnings() -> None:
+    doc = example()
+    doc["texts"]["egy"]["provenance"] = "assistant_draft"
+    doc["arabizi_variant"]["provenance"] = "assistant_draft"
+    doc["texts"]["cs"]["provenance"] = "llm"
+    strict = [(f.column, f.severity) for f in check_provenance(doc)]
+    lenient = [(f.column, f.severity) for f in check_provenance(doc, allow_drafts=True)]
+    assert strict == [("egy", "error"), ("cs", "error"), ("arabizi_variant", "error")]
+    assert lenient == [("egy", "warning"), ("cs", "error"), ("arabizi_variant", "warning")]
+    assert check_provenance(example(), allow_drafts=True) == []
+
+
 def test_provenance_tolerates_broken_documents() -> None:
     assert check_provenance({"texts": "nope"}) == []
     assert where(check_provenance({"texts": {"en": {}}})) == [("provenance", "en", "error")]

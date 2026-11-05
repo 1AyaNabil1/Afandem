@@ -185,6 +185,59 @@ def test_cli_data_lint_errors(tmp_path: Path, capsys: pytest.CaptureFixture[str]
     assert f"{path}: error [egyptian_marker] egy.text:" in out
 
 
+def drafted(*columns: str) -> dict[str, Any]:
+    doc = example()
+    for name in columns:
+        doc["texts"][name]["provenance"] = "assistant_draft"
+    return doc
+
+
+def test_lint_path_allow_drafts(tmp_path: Path) -> None:
+    write(tmp_path / "clinic" / "clinic-0042.json", drafted("egy", "en"))
+    strict = lint_path(tmp_path)
+    assert not strict.ok
+    assert [(f.rule, f.column) for f in strict.findings if f.severity == "error"] == [
+        ("provenance", "en"),
+        ("provenance", "egy"),
+    ]
+    lenient = lint_path(tmp_path, allow_drafts=True)
+    assert lenient.ok
+    assert lenient.count("warning") == 2
+
+
+def test_cli_data_lint_drafts_fail_without_the_flag(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = write(tmp_path / "clinic" / "clinic-0042.json", drafted("egy"))
+    assert main(["data", "lint", str(tmp_path)]) == 1
+    out = capsys.readouterr().out
+    assert f"{path}: error [provenance] egy.provenance: drafted by the AI assistant" in out
+    assert "1 file(s): 1 error(s), 0 warning(s)" in out
+    assert "--allow-drafts" not in out
+
+
+def test_cli_data_lint_allow_drafts(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    path = write(tmp_path / "clinic" / "clinic-0042.json", drafted("egy", "cs_latin"))
+    assert main(["data", "lint", str(tmp_path), "--allow-drafts"]) == 0
+    out = capsys.readouterr().out
+    assert f"{path}: warning [provenance] egy.provenance: drafted by the AI assistant" in out
+    assert f"{path}: warning [provenance] cs_latin.provenance:" in out
+    assert "1 file(s): 0 error(s), 2 warning(s)" in out
+    assert "2 assistant_draft finding(s) reported as warnings (--allow-drafts)" in out
+
+
+def test_cli_data_lint_allow_drafts_keeps_other_provenance_errors(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    doc = drafted("egy")
+    doc["texts"]["msa"]["provenance"] = "llm"
+    path = write(tmp_path / "clinic" / "clinic-0042.json", doc)
+    assert main(["data", "lint", str(path), "--allow-drafts"]) == 1
+    out = capsys.readouterr().out
+    assert f"{path}: warning [provenance] egy.provenance:" in out
+    assert f"{path}: error [provenance] msa.provenance: provenance is 'llm'" in out
+
+
 def test_cli_data_lint_bad_path(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["data", "lint", str(tmp_path / "nope")]) == 2
     assert "no such file or directory" in capsys.readouterr().err

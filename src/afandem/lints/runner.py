@@ -85,10 +85,13 @@ def schema_findings(exc: ValidationError) -> list[Finding]:
 
 
 def lint_document(
-    document: Mapping[str, Any], *, canary_guid: str | None = None
+    document: Mapping[str, Any], *, canary_guid: str | None = None, allow_drafts: bool = False
 ) -> tuple[list[Finding], Scenario | None]:
-    """Provenance and schema checks on a parsed document, then every per-scenario lint."""
-    findings = check_provenance(document)
+    """Provenance and schema checks on a parsed document, then every per-scenario lint.
+
+    `allow_drafts` reports `assistant_draft` provenance as a warning instead of an error.
+    """
+    findings = check_provenance(document, allow_drafts=allow_drafts)
     try:
         scenario = Scenario.model_validate(document)
     except ValidationError as exc:
@@ -110,7 +113,9 @@ class LintReport:
         return self.count("error") == 0
 
 
-def lint_paths(paths: Sequence[Path], *, canary_guid: str | None = None) -> LintReport:
+def lint_paths(
+    paths: Sequence[Path], *, canary_guid: str | None = None, allow_drafts: bool = False
+) -> LintReport:
     report = LintReport(files=list(paths))
     loaded: list[LoadedScenario] = []
     for path in paths:
@@ -119,7 +124,9 @@ def lint_paths(paths: Sequence[Path], *, canary_guid: str | None = None) -> Lint
         except ScenarioLoadError as exc:
             report.findings.append(Finding("load", exc.message, path=path))
             continue
-        findings, scenario = lint_document(document, canary_guid=canary_guid)
+        findings, scenario = lint_document(
+            document, canary_guid=canary_guid, allow_drafts=allow_drafts
+        )
         scenario_id = scenario.id if scenario is not None else _document_id(document)
         report.findings.extend(f.located(path=path, scenario_id=scenario_id) for f in findings)
         if scenario is not None:
@@ -128,9 +135,11 @@ def lint_paths(paths: Sequence[Path], *, canary_guid: str | None = None) -> Lint
     return report
 
 
-def lint_path(path: str | Path, *, canary_guid: str | None = None) -> LintReport:
+def lint_path(
+    path: str | Path, *, canary_guid: str | None = None, allow_drafts: bool = False
+) -> LintReport:
     """Lint one file, a domain directory, or a tree of `<domain>/*.json` directories."""
-    return lint_paths(scenario_paths(path), canary_guid=canary_guid)
+    return lint_paths(scenario_paths(path), canary_guid=canary_guid, allow_drafts=allow_drafts)
 
 
 def _document_id(document: Mapping[str, Any]) -> str | None:

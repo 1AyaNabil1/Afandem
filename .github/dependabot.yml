@@ -1,0 +1,47 @@
+# Weekly, grouped dependency updates (docs/ci.md). Each pull request runs the full CI.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Cairo
+    # A release must be a week old before it is proposed (supply-chain hygiene).
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+      include: scope
+
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Cairo
+    cooldown:
+      default-days: 7
+    groups:
+      # Minor and patch updates in one pull request; majors come one by one.
+      python:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # Pins from docs/harness-spec.md §2. pydantic's minor is pinned because
+      # model_json_schema() output, and so every cache key, can change across minors.
+      - dependency-name: pydantic
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      # google-genai 3 removes automatic function calling; openai 4 is untested.
+      - dependency-name: google-genai
+        update-types: ["version-update:semver-major"]
+      - dependency-name: openai
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: build
+      include: scope

@@ -288,3 +288,16 @@ def test_data_lint_still_works(capsys: pytest.CaptureFixture[str]) -> None:
     code = main(["data", "lint", str(example)])
     assert code in (0, 1)
     assert "1 file(s):" in capsys.readouterr().out
+
+
+def test_cli_starts_without_the_routes_file(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def missing(path: Path | None = None) -> list[str]:
+        raise FileNotFoundError("config/routes.json")
+
+    monkeypatch.setattr(cli, "route_names", missing)  # as in a wheel outside a checkout
+    with pytest.raises(SystemExit) as info:
+        main(["--version"])
+    assert info.value.code == 0
+    assert __version__ in capsys.readouterr().out

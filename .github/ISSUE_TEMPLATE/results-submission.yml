@@ -1,0 +1,80 @@
+name: Model results submission
+description: Submit Afandem results for a model you ran.
+labels: [results]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        External results follow `CONTRIBUTING-results.md`, published with the first results
+        (Phase 3); until then results cannot be accepted, but you can use this form to say you
+        plan to submit.
+
+        Results come in by pull request. A submission with its traces and cache shards is
+        replayed in CI and listed as **external, replayed**; one without them is listed as
+        **self-reported**. Leaderboard rows are frozen at their run date.
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: The exact model id as served, for example the provider's slug and version.
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Provider or route
+      description: Who served the model (and the `config/routes.json` route, if you used one).
+    validations:
+      required: true
+  - type: textarea
+    id: parameters
+    attributes:
+      label: Parameters
+      description: >-
+        Everything sent with each request: temperature, max tokens, the reasoning or thinking
+        setting, provider preferences. `afandem run --dry-run` prints the parameter table.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Afandem commit and data version
+      description: The commit or tag of this repository and the dataset version you ran.
+    validations:
+      required: true
+  - type: input
+    id: run
+    attributes:
+      label: Run id, date and columns
+      description: For example `20261201T101500Z`, run on 2026-12-01, all six columns.
+    validations:
+      required: true
+  - type: dropdown
+    id: evidence
+    attributes:
+      label: Evidence
+      options:
+        - Traces and cache shards attached to the pull request (external, replayed)
+        - Summary numbers only (self-reported)
+    validations:
+      required: true
+  - type: input
+    id: pull-request
+    attributes:
+      label: Pull request or download link
+      description: Where the traces and shards are, if you have them.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Provider errors, quota stops, excluded items, anything that differs from the defaults.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Checks
+      options:
+        - label: I ran the published scenarios unchanged, with the published system prompt and policy blocks.
+          required: true
+        - label: I have not pasted scenario texts into this issue or into any chat with a model outside the run itself.
+          required: true

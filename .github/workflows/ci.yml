@@ -1,39 +1,315 @@
+# Continuous integration. Every job is described in docs/ci.md.
+# Branch protection requires only the aggregate job `ci-ok`.
+# Actions are pinned to full commit SHAs; Dependabot keeps them current.
 name: ci
 
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Mondays 05:17 UTC: new advisories and runner-image drift show up without a push.
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+  # release.yml runs these same checks before it builds a release.
+  workflow_call:
 
 permissions:
   contents: read
 
+concurrency:
+  # One run per ref. A newer push cancels the older run, except on main, where every
+  # commit keeps its own result.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  UV_VERSION: "0.13.7"
+  NODE_VERSION: "26"
+
 jobs:
-  test:
+  lint:
+    name: lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: uv.lock is up to date
+        run: uv lock --check
+      - name: Install
+        run: uv sync --locked
+      - name: ruff format
+        run: uv run ruff format --check
+      - name: ruff check
+        run: uv run ruff check --output-format=github
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
       - name: Install
-        run: uv sync --frozen
-      - name: Lint
-        run: |
-          uv run ruff check
-          uv run ruff format --check
-      - name: Types
+        run: uv sync --locked
+      - name: mypy --strict (settings in pyproject.toml)
         run: uv run mypy
-      - name: Tests
-        run: uv run pytest -q
-      - name: Fake run (no keys, no network)
-        run: uv run afandem run --fake --scenarios tests/fixtures/smoke --runs-dir "${{ runner.temp }}/afandem-runs"
-  secrets:
-    runs-on: ubuntu-latest
+
+  test:
+    name: test (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.13", "3.14"]
+        include:
+          - os: macos-latest
+            python: "3.14"
+    env:
+      COVERAGE_FILE: reports/.coverage
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      # The authoring-tool tests (tests/test_author_tool.py) run tools/author/model.js.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install
+        run: uv sync --locked
+      - name: pytest with coverage
+        run: |
+          mkdir -p reports
+          uv run pytest -ra \
+            --cov=afandem --cov-branch \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-report=html:reports/htmlcov \
+            --cov-fail-under=90 \
+            --junitxml=reports/junit.xml \
+            | tee reports/pytest.txt
+      - name: No test was skipped
+        # An xfail is expected; a skip means a dependency was missing (for example Node.js).
+        run: |
+          if grep -o '<skipped [^>]*>' reports/junit.xml | grep -v 'type="pytest.xfail"'; then
+            echo "::error title=Skipped tests::every test must run in CI; see the pytest log"
+            exit 1
+          fi
+      - name: Job summary
+        if: ${{ !cancelled() && hashFiles('reports/junit.xml') != '' }}
+        env:
+          OS: ${{ matrix.os }}
+          PYTHON: ${{ matrix.python }}
+        run: |
+          {
+            echo "### Tests: ${OS}, Python ${PYTHON}"
+            echo
+            tail -n 1 reports/pytest.txt | sed -E 's/^=+ *//; s/ *=+$//'
+            echo
+            echo "Coverage (files below 100%):"
+            echo
+            uv run coverage report --format=markdown --skip-covered
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports-${{ matrix.os }}-py${{ matrix.python }}
+          path: reports/
+          retention-days: 14
+
+  data:
+    name: data
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Install
+        run: uv sync --locked
+      - name: JSON Schema matches the pydantic models
+        run: uv run python -m afandem.scenarios.schema_export --check
+      - name: Lint the spec example fixture
+        # tests/fixtures/smoke/ holds placeholder texts that fail the language lints on
+        # purpose; the smoke job and tests/test_smoke_fixtures.py cover those files.
+        run: uv run afandem data lint tests/fixtures/scenarios
+      - name: Lint data/ (assistant drafts reported as warnings)
+        # Drafts may run but never enter the measured set (docs/decisions.md, D19).
+        # release.yml lints data/ again without --allow-drafts.
+        run: |
+          if ! find data -mindepth 2 -maxdepth 2 -name '*.json' -not -path 'data/schema/*' | grep -q .; then
+            echo "::notice title=data lint::data/ holds no scenarios yet"
+            exit 0
+          fi
+          status=0
+          uv run afandem data lint data --allow-drafts > "$RUNNER_TEMP/data-lint.txt" || status=$?
+          cat "$RUNNER_TEMP/data-lint.txt"
+          {
+            echo "### Data lint: data/ (--allow-drafts)"
+            echo
+            echo '```'
+            grep -E '^[0-9]+ (file\(s\)|assistant_draft finding)' "$RUNNER_TEMP/data-lint.txt" || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+  smoke:
+    name: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Install
+        run: uv sync --locked
+      - name: Fake run on the smoke fixtures (no keys, no network)
+        run: >
+          uv run afandem run --fake --scenarios tests/fixtures/smoke
+          --runs-dir "$RUNNER_TEMP/afandem-runs" --run-id smoke
+      - name: Run summary
+        run: |
+          {
+            echo "### Fake run: tests/fixtures/smoke"
+            echo
+            echo '```'
+            uv run afandem summary "$RUNNER_TEMP/afandem-runs/smoke"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the run directory
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-run
+          path: ${{ runner.temp }}/afandem-runs/smoke/
+          retention-days: 14
+
+  security:
+    name: security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # gitleaks lists the commits of a pull request
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v3
+          persist-credentials: false
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: "8.30.1" # same as .pre-commit-config.yaml
+          GITLEAKS_ENABLE_COMMENTS: "false"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Dependency audit (pip-audit on the locked set, all groups)
+        run: |
+          uv export --locked --all-groups --no-emit-project --format requirements.txt \
+            --output-file "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit@2.10.1 --requirement "$RUNNER_TEMP/requirements.txt" \
+            --require-hashes --disable-pip --strict --progress-spinner off
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Build the sdist and wheel
+        run: uv build --out-dir dist
+      - name: Check the distribution metadata (twine)
+        run: uvx twine@7.0.0 check --strict dist/*
+      - name: Install the wheel in a clean environment
+        run: >
+          uv run --isolated --no-project --with dist/*.whl
+          python -c "import afandem; print('afandem', afandem.__version__)"
+      - name: Run the installed CLI outside the checkout
+        working-directory: ${{ runner.temp }}
+        run: >
+          uv run --isolated --no-project --python 3.14 --with "$GITHUB_WORKSPACE"/dist/*.whl
+          afandem --version
+      - name: Upload dist/
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          retention-days: 14
+
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Install
+        run: uv sync --locked
+      - name: Cache the hook environments
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Run every hook on every file
+        run: uv run pre-commit run --all-files --show-diff-on-failure --color=always
+
+  ci-ok:
+    # The one check branch protection requires: it fails unless every job above succeeded.
+    name: ci-ok
+    if: ${{ always() }}
+    needs: [lint, typecheck, test, data, smoke, security, build, pre-commit]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Every job succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success")' > /dev/null

@@ -3,7 +3,10 @@
 - `provenance` (raw document): every column and the Arabizi variant are `"hand"`; runs on
   the parsed JSON so it reports even when the schema rejects the file. `"assistant_draft"`
   (drafted by the AI assistant, not yet rewritten or approved by the author) is reported with
-  its own message: such a text may be run but never enters the measured set.
+  its own message: such a text may be run but never enters the measured set. It is an error
+  by default; `allow_drafts=True` (`afandem data lint --allow-drafts`, used by CI on pushes
+  and pull requests) reports it as a warning. Any other value stays an error, and the release
+  workflow lints without the flag, so a release never contains drafts (D19).
 - `length_ratio`: whitespace-token count 0.5-1.8x EGY; for the Arabic-script columns the
   character ratio is a secondary warning.
 - `canary`: the canary string with a uuid4 (optionally the project's GUID).
@@ -18,7 +21,7 @@ import uuid
 from collections.abc import Mapping
 from typing import Any
 
-from afandem.lints.findings import Finding
+from afandem.lints.findings import Finding, Severity
 from afandem.lints.text import has_arabic_indic_digits, has_ascii_digits, whitespace_tokens
 from afandem.scenarios.schema import (
     ARABIC_SCRIPT_COLUMNS,
@@ -39,7 +42,7 @@ _CANARY_RE = re.compile(
 )
 
 
-def check_provenance(document: Mapping[str, Any]) -> list[Finding]:
+def check_provenance(document: Mapping[str, Any], *, allow_drafts: bool = False) -> list[Finding]:
     findings: list[Finding] = []
     texts = document.get("texts")
     blocks: list[tuple[str, Any]] = []
@@ -49,17 +52,22 @@ def check_provenance(document: Mapping[str, Any]) -> list[Finding]:
     for name, block in blocks:
         if not isinstance(block, Mapping) or block.get("provenance") == "hand":
             continue
+        severity: Severity = "error"
         if block.get("provenance") == "assistant_draft":
             message = (
                 "drafted by the AI assistant (assistant_draft): rewrite or approve the text, "
                 "follow-up and confirm, then set provenance to 'hand'"
             )
+            if allow_drafts:
+                severity = "warning"
         else:
             message = (
                 f"provenance is {block.get('provenance')!r}; every text, follow-up and "
                 "confirm must be hand-written ('hand')"
             )
-        findings.append(Finding("provenance", message, column=name, field="provenance"))
+        findings.append(
+            Finding("provenance", message, column=name, field="provenance", severity=severity)
+        )
     return findings
 
 
