@@ -60,7 +60,7 @@ async def scored(
 
 
 def test_versions() -> None:
-    assert SCORER_VERSION == "1.1"
+    assert SCORER_VERSION == "1.2"
     assert NORMALISER_VERSION == "2"
 
 
@@ -68,7 +68,7 @@ async def test_precomputed_gold_gives_the_same_scores() -> None:
     scenario = SCENARIOS["clinic-9001"]
     episode, scores = await scored("clinic-9001")
     assert score_episode(scenario, episode, gold=prepare_gold(scenario)) == scores
-    assert scores.scorer_version == "1.1" and scores.normaliser_version == "2"
+    assert scores.scorer_version == "1.2" and scores.normaliser_version == "2"
 
 
 @pytest.mark.parametrize("mode", ["error_200", "quota"])

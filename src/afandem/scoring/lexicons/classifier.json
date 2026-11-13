@@ -20,7 +20,7 @@
   "alternative_markers": {
     "english": ["or", "which"],
     "arabic": ["ولا", "أو", "أم", "أي", "لأي", "بأي", "أنهي", "انهي", "فيهم", "إمتى", "امتى", "متى"],
-    "arabizi": ["wala", "walla", "aw", "anhy", "emta"]
+    "arabizi": ["wala", "walla", "aw", "ay wa7ed", "anhy", "emta"]
   },
   "refusal_markers": {
     "english": ["i can t", "i cannot", "i m unable", "i am unable", "unable to", "not able to", "not allowed", "i m sorry", "i am sorry", "sorry"],

@@ -101,7 +101,7 @@ async def test_full_fake_run(tmp_path: Path) -> None:
     assert meta["data_hash"] == data_hash(LOADED)
     assert meta["models_snapshot_date"] == "2026-11-05"
     assert meta["targets"][0]["params_sent"] == FAKE_TARGET.params
-    assert meta["prompt_version"] == "stub" and meta["scorer_version"] == "1.1"
+    assert meta["prompt_version"] == "stub" and meta["scorer_version"] == "1.2"
     assert meta["normaliser_version"] == "2"
     assert meta["follow_up_rule"] == "v1"
     assert meta["finished_at"] is not None

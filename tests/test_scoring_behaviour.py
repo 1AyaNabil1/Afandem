@@ -194,3 +194,15 @@ def test_ask_other() -> None:
     assert ask_other("ask", Turn1("ask", None)) is None
     assert ask_other("ask", Turn1("confirm")) is None
     assert ask_other("act", Turn1("ask", "other")) is None
+
+
+@pytest.mark.parametrize(
+    ("text", "label"),
+    [
+        ("[reply] t7eb a7gez ay wa7ed?", "ask"),  # a choice (D27) ...
+        ("[reply] t7eb a7gez?", "confirm"),
+        ("[reply] t7eb a7gez wa7ed?", "confirm"),  # ... `wa7ed` alone is not one
+    ],
+)
+def test_arabizi_choice_phrase_makes_a_confirm_an_ask(text: str, label: str) -> None:
+    assert classify_turn1(text, None).label == label
