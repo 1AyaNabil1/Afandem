@@ -62,3 +62,12 @@ One entry per working session: date, hours, what was done, the next three steps.
 - Normaliser 2: «امبارح»/yesterday as -1 day. Review sheet script; Brain notes 11 (all 30 drafts), 12 (draft amendment 1), 13 (κ labels); three X posts with screenshots in note 08.
 - Runs: `drafts-clinic-six-2026-11-05` (Groq stopped at its daily quota); `drafts-pilot-2026-11-05` (all 30 × 6 × 4) started.
 - **Next three steps:** resume the Groq targets of the pilot run on 6 Nov and report it as a first look; Aya reviews the drafts, the κ labels and amendment 1; fix the two rule bugs and re-check κ on a fresh sample.
+
+## 2026-11-13 · pilot run restarted, scorer 1.2 (assistant-run, ~0 h of Aya's time)
+- STATE.md was a week old and the 6 Nov run had never happened (no run folder, no commits since 6 Nov, all 180 columns still `assistant_draft`).
+- Probe: Gemini, gpt-oss and Qwen answer; **Ollama Cloud returns 402 "Add usage credits or subscribe"** (it worked on 5 Nov). The probe overwrote 8 tracked fixtures in `tests/fixtures/providers/` (including Ollama's good 200) and left 13 untracked ones; the restore was denied and the changes stay out of commits.
+- Started `drafts-pilot-2026-11-13` (30 × 6 × 4, cache key is request-only so 5 Nov calls replay). It exited at 20:12 with code 4 (quota): Gemini 180/180, Gemma 168/180 (stopped at clinic-0014 `en` on the 402; clinic-0015 never tried), gpt-oss 162/180, Qwen 54/180 (daily quota, about 3,600 tokens per item); 564 of 720. Not scored.
+- Scorer 1.2 (D27), branch `fix/scorer-1.2-arabizi-choice`, commit `742dc08`, local only: `ay wa7ed` joins the Arabizi alternative markers (`aw` was already there, so D26 was partly stale). Whole-token matching; a test pins `ay wa7ed` → ask and a lone `wa7ed` → confirm. Golden file regenerated (version string only). 1,800 tests pass.
+- Estimate: Groq routes finish about 16–17 Nov; Phase 1 exit about 3 Feb 2027; published v0 about 16 Jun 2027 (safe date Sep 2027), from the hours in `docs/plan.md`.
+- No X post today: nothing is pushed or public to screenshot (branch is local, run unfinished).
+- **Next three steps:** let the run finish (Groq re-run daily with `--retry-errors`; Gemma clinic-0015 alone) and score it with 1.2; Aya reviews the drafts, amendment 1 and the κ labels (smallest first: the 60 labels in note 13); fresh κ sample with a blind Opus labeller.
