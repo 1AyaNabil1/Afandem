@@ -5,7 +5,7 @@
 **Phase:** 1 (pilot). Sub-budgets (a), (b) and (c) are built, and so are all the lints in the spec's table. All 30 pilot scenarios exist as **assistant drafts** (15 clinic, 15 banking), lint-clean and solvable, waiting for Aya's review. The rule-classifier κ check is met on blind assistant labels and is provisional until she reviews them (D26). Free routes only until funded; the pilot is published at the Phase 1 exit. The repo is public; commits follow Conventional Commits.
 
 **What works:**
-- `uv run pytest` (1,800 tests; the count is on branch `fix/scorer-1.2-arabizi-choice`, local only, commit `742dc08`, not yet merged or pushed).
+- `uv run pytest` (1,800 tests; the count is on branch `fix/scorer-1.2-arabizi-choice`, pushed, commit `742dc08`, not yet merged).
 - `afandem data lint <path> [--allow-drafts]`, now with calendar (including the 2–5-days-ahead rule), harmful-text and solvability lints (D25).
 - `afandem run --fake | --target <route>`, `score`, `report`, `show`, `summary`.
 - Scripts:
@@ -68,7 +68,7 @@
    - Dependabot security updates;
    - labels `data` and `results`.
 7. **Ollama Cloud credits (decision):** Gemma has returned a 402 since 13 Nov. The plan says $0 until funded, so paying is your call. For the pilot only clinic-0014 revision 2's six Gemma columns depend on it; every column you rewrite later needs Gemma live. Check the Ollama account page first for whether any free allowance resets.
-8. Merge, or not, `fix/scorer-1.2-arabizi-choice` (local, not pushed); pushing it also gives the X post a GitHub page to screenshot.
+8. Merge, or not, `fix/scorer-1.2-arabizi-choice` (pushed 13 Nov, no PR opened). The X post for it is at the top of Brain note `08` (caption is an assistant draft: edit it before posting).
 9. Optional: the Cloudflare token, and a regenerated Fanar key.
 10. Outreach (Brain note `10`):
    - OpenReview needs a vouch.
